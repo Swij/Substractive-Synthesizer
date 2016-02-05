@@ -148,14 +148,75 @@ def geometricWaves(detail):
 		print(increment)
 
 
-#def lfoWaves( ):
+################################################################################
+##  LFO - Here we go!
+################################################################################
+def lfoWaves( ):
 
-#def printOutErrors( ):
+	triAmp = 2**nrOfIncBits-1				# Amplitude with extra bits
+
+	lfoPeriods = []
+	lfoSamplingFrequency = []
+	lfoIncrement = []
+
+	lfoFsFactor = 10.0
+
+	# Step up with scientific pitches...
+	lfoMIN = -145
+	lfoMAX = -53
+
+	# Step up with +0.1
+	r = 0.1
+	fs = 100.0
+
+	while r <= 20.0:
+
+		fs = r * lfoFsFactor
+		ts = 1.0 / fs
+
+		T = 1.0 / r									# Also save its period
+		
+		nrOfClks = T / Ts 							# How many clocks is in that period
+		roundedClks = int(round(nrOfClks)) 			# We want them floats as integers
+		
+		nrOfSampClks = ts / Ts 						# How many clocks is in that period
+		roundedSampClks = int(round(nrOfSampClks)) 	# We want them floats as integers
+	
+		if not roundedClks % 2 == 0:
+
+			diff = nrOfClks - roundedClks
+			if diff < 0:
+				roundedClks = int(math.floor(nrOfClks))
+			else:
+				roundedClks = int(math.ceil(nrOfClks))
+
+
+		increase = int(triAmp / fs)
+
+		lfoPeriods.append(roundedClks)
+		lfoSamplingFrequency.append(roundedSampClks)
+		lfoIncrement.append(increase)
+
+		r += 0.1
+
+	print("LFO periods\n")
+	print(lfoPeriods)
+
+	print("\n\nLFO sampling frequencies periods\n")
+	print(lfoSamplingFrequency)
+
+	print("\n\nLFO incrementation at every sampling point\n")
+	print(lfoIncrement)
+
+
+#def printOutErrorsAndMaybeLaTeXToo( ):
+
+#def generateVHDL( ):
 	
 def main( ):
 
 	geometricWaves(0)		# 0 = Detailed list, 1 = list form
-	#lfoWaves( )
+	lfoWaves( )
 	#printOutErrors( )
 
 
