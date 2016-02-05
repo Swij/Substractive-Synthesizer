@@ -1,4 +1,5 @@
 import math
+import stringIncludes as strings
 
 min_ = -57						# -57 == C0
 max_ = 74 #- 12*3				#  74 == B10 ; 74 - 12*3 == B7
@@ -159,7 +160,7 @@ def lfoWaves( ):
 	lfoSamplingFrequency = []
 	lfoIncrement = []
 
-	lfoFsFactor = 10.0
+	lfoFsFactor = 1000.0
 
 	# Step up with scientific pitches...
 	lfoMIN = -145
@@ -208,6 +209,48 @@ def lfoWaves( ):
 	print("\n\nLFO incrementation at every sampling point\n")
 	print(lfoIncrement)
 
+	print("\n\nPeriods rewritten:\n")
+
+	highestMods = []
+	denumerators = []
+
+	for i in range(len(lfoPeriods)):
+
+		highMod = 1
+
+		for j in range(2,1000):
+
+			if lfoPeriods[i] % j == 0:
+				highMod = j
+
+		highestMods.append(highMod)
+		denumerators.append(int(lfoPeriods[i]/highMod))
+
+	
+	for i in range(len(lfoPeriods)):
+
+		print("%i = %i * %i"%(lfoPeriods[i],highestMods[i],denumerators[i]))
+
+
+def printMIDI( ):
+
+	# The first data is the note number. There are 128 possible notes on a MIDI device, 
+	# numbered 0 to 127 (where Middle C is note number 60). This indicates which note 
+	# should be released.
+
+	# MIDI uses octave -1: nope, fuck that shit, offsetting to get rid of it
+	# Thus: C(-1) to G9, 4 last (highest) notes in octave 9 is missing
+	# (C-1) = 9.72271 Hz
+	# G9    = 12543.9 Hz
+
+	print("\n\nHere is MIDI-codes with its respective note\n")
+
+	offset = 12
+	for i in range(116):
+
+		print("MIDI: %i\t TONE: %s"%(offset,allNames[i]))
+
+		offset += 1
 
 #def printOutErrorsAndMaybeLaTeXToo( ):
 
@@ -217,69 +260,9 @@ def main( ):
 
 	geometricWaves(0)		# 0 = Detailed list, 1 = list form
 	lfoWaves( )
+	printMIDI( )
 	#printOutErrors( )
-
+	#print(strings.cp)
 
 if __name__ == "__main__":
-	main()
-
-
-	################################################################################
-
-	# Fsout = 150000.0
-	# T = 1.0 / Fsout
-	# clksFs = T / Ts
-
-	# print("Period in INT, increment in INT and step in INT")
-	# print("fs = %f, T = %f, clksFs = %f"%(Fsout,T,clksFs))
-
-		# Fs_tri1 = allSampleFreqInt[i]
-		# Fs_tri2 = Fs_tri1
-
-		# safetyFirst = 0
-		# fail = ""
-
-		# while((allPeriodsIntMod4[i]/2 % Fs_tri1 != 0) and safetyFirst < 20000):
-
-		# 	Fs_tri1 += 1
-		# 	safetyFirst += 1
-
-		# increase = triAmp/Fs_tri1
-		# increase2 = triAmp/Fs_tri2
-
-		# if(safetyFirst >= 9999):
-		# 	fail = "FAIL"
-		# else:
-		# 	fail = " "
-
-		# print(allNames[i] + " = %f Hz, integer period = %i"%(allFrequenciesFloat[i],allPeriodsIntMod2[i]))
-		# print(("Fs period1 (original) = %i\tIncrease1 = %i\tFs period2 = %i\tIncrease2 = %i %s")%(Fs_tri1,increase,Fs_tri2,increase2,fail))
-		# print("Total triAmp1 = %i\tTotal triAmp2 = %i"%(increase*Fs_tri1,increase2*Fs_tri2))
-		# print("Shifted amp = %i\n"%(int(increase2*Fs_tri2)>>10))
-
-		################################################################################
-
-		# Ftri = allFrequenciesFloat[i]*OSR
-		# Fdiffer = Fsout / Ftri
-		# #print("Int / Minsamp = %f / %f = %f"%(Fsout,Ftri,Ftri))
-
-		# print(allNames[i] + " = %f Hz"%(allFrequenciesFloat[i]))
-
-
-		# step = allPeriodsIntMod2[i] / Ftri
-		# print("Increase = Int / (2*fs) = %i / %f = %f"%(allPeriodsIntMod2[i],Ftri,step))
-
-
-		# intDiv4096 = allPeriodsIntMod2[i] / 2.0 / 2047.0
-		# print("Int / 2047 = %f\n"%(intDiv4096))
-
-		#nrOfSteps.append(allPeriodsIntMod2[i]/clksFs)
-		#increment.append(4096/1)
-
-	#print(allSampleFreqInt)
-	#print(allPeriodsIntMod2)
-	
-
-	# print(allPeriodsIntMod4)
-	# #print(nrOfSteps)
-	
+	main( )
