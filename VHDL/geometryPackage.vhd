@@ -13,28 +13,28 @@ constant F_s : romArray := (1223122, 1154473, 1089678, 1028519, 970793, 916306, 
 -- The incrementation at every sampling point
 constant inc : romArray := (3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 12, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 27, 29, 30, 32, 34, 36, 38, 41, 43, 46, 48, 51, 54, 58, 61, 65, 69, 73, 77, 82, 87, 92, 97, 103, 109, 116, 123, 130, 138, 146, 155, 164, 174, 184, 195, 207, 219, 232, 246, 260, 276, 292, 310, 328, 348, 369, 391, 414, 438, 465, 492, 522, 553, 585, 620, 657, 696, 738, 782, 828, 877, 930, 985, 1043, 1106, 1171, 1241, 1315, 1393, 1476, 1564, 1657, 1755, 1860, 1971, 2087, 2212, 2343, 2483, 2631, 2786, 2953, 3127, 3315, 3512, 3721, 3942, 4177, 4424, 4686, 4963, 5262, 5577, 5907, 6260, 6626);
 
--- Declare functions and procedure
-function getT (input : integer) return STD_LOGIC_VECTOR;
-function getFs (input : integer) return STD_LOGIC_VECTOR;
-function getInc (input : integer) return STD_LOGIC_VECTOR;
+-- Declare functions
+function getT (input : integer) return integer;
+function getFs (input : integer) return integer;
+function getInc (input : integer) return integer;
 
 end geometryPackage;
 
 package body geometryPackage is
 
-    function getT (input : integer) return STD_LOGIC_VECTOR is
+    function getT (input : integer) return integer is
     begin
-        return STD_LOGIC_VECTOR(to_unsigned(T(input),32));
+        return T(input);
     end getT;
     
-    function getFs (input : integer) return STD_LOGIC_VECTOR is
+    function getFs (input : integer) return integer is
     begin
-        return STD_LOGIC_VECTOR(to_unsigned(F_s(input),32));
+        return F_s(input);
     end getFs;
     
-    function getInc (input : integer) return STD_LOGIC_VECTOR is
+    function getInc (input : integer) return integer is
     begin
-        return STD_LOGIC_VECTOR(to_unsigned(inc(input),32));
+        return inc(input);
     end getInc;
-    
+
 end geometryPackage;

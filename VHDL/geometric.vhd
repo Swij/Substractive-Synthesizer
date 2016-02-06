@@ -22,24 +22,21 @@ end geometric;
 
 architecture arch_geometric of geometric is
 
-signal squareWave : STD_LOGIC_VECTOR(accSize-1 downto 0);
+signal squareWave   : STD_LOGIC_VECTOR(11 downto 0);
 signal triangleWave : STD_LOGIC_VECTOR(accSize-1 downto 0);
-signal saw1Wave : STD_LOGIC_VECTOR(accSize-1 downto 0);
-signal saw2Wave : STD_LOGIC_VECTOR(accSize-1 downto 0);
+signal sawWave      : STD_LOGIC_VECTOR(accSize-1 downto 0);
 
 signal triangleState : STD_LOGIC;
 
-signal T : STD_LOGIC_VECTOR(32-1 downto 0);
-signal F_s : STD_LOGIC_VECTOR(32-1 downto 0);
-signal inc : STD_LOGIC_VECTOR(32-1 downto 0);
-signal duty : STD_LOGIC_VECTOR(32-1 downto 0);
+signal T        : integer range 0 to 2**32 - 1;
+signal F_s      : integer range 0 to 2**32 - 1;
+signal F_s_clk  : integer range 0 to 2**32 - 1;
+signal duty     : integer range 0 to 2**32 - 1;
 
-signal clkCnt : integer range 0 to 2**32 - 1;
+signal inc      : integer range 0 to 2**32 - 1;
+signal sum      : integer range 0 to 2**32 - 1;
 
-
-
---type noteType is array(0 to 131) of integer;
---signal notes: noteType;
+signal clkCnt   : integer range 0 to 2**32 - 1;
 
 begin
 
@@ -57,85 +54,145 @@ begin
 
         triangleState <= '1';
 
-        T <= (OTHERS => '0');
-        F_s <= (OTHERS => '0');
-        inc <= (OTHERS => '0');
-        duty <= (OTHERS => '0');
+        T <= 0;
+        F_s <= 0;
+        inc <= 0;
+        duty <= 0;
+        
+        --works <= STD_LOGIC_VECTOR(to_unsigned(T(input),32));
         
     elsif rising_edge(clk) then
 
+-------------------------------------------------------------------------------
+--
+--      RESTART
+--
+-------------------------------------------------------------------------------
         if restart = '1' then
     
-            T <= getT(to_integer(unsigned(note))); 
-                        
-            F_s <= getFs(to_integer(unsigned(note)));
-                       
+            T <= getT(to_integer(unsigned(note)));                         
+            F_s <= getFs(to_integer(unsigned(note)));                       
             inc <= getInc(to_integer(unsigned(note)));
-    
-    
+            F_s_clk <= 0;
+
         -- 	Square
             if waveForm = "00" then
                 
-                --duty <= STD_LOGIC_VECTOR(getT(to_integer(note)) / 100 * to_integer(dutyCycle));
-                output <= ('1',OTHERS => '0');
+                duty <= getT(to_integer(unsigned(note))) / 100 * to_integer(unsigned(dutyCycle));
+                squareWave <= ('1',OTHERS => '0');
+                output <= squareWave;
                                 
         --  Triangle	
-            elsif waveForm = "01" then
-        
-                output <= (OTHERS => '0');
-                --clkCnt <= shift_right(to_integer(getT(to_integer(note))),1);
+            elsif waveForm = "01" then        
+                
+                --clkCnt <= to_integer(shift_right(getT(to_integer(unsigned(note))),1));
+                clkCnt <= getT(to_integer(unsigned(note)))/2;
                 triangleState <= '1';
+                triangleWave <= (OTHERS => '0');
+                output <= triangleWave(accSize-1 downto 10);
         
         --  Saw 1
             elsif waveForm = "10" then
         
-                output <= ('0',OTHERS => '1');
+                saw1Wave <= ('1',OTHERS => '0');
+                output <= saw1Wave(accSize-1 downto 10);
                 
         --  Saw 2    
             elsif waveForm = "0011" then
         
-                output <= ('1',OTHERS => '0');
-        
+                saw2Wave <= ('0',OTHERS => '1');
+                output <= saw2Wave(accSize-1 downto 10);
+                
             end if;
-        
+-------------------------------------------------------------------------------
+--
+--      ENABLED
+--
+-------------------------------------------------------------------------------
         elsif enable = '1' then
         
-        -- 	Square
-            if waveForm = "0010" then
-        
-        
-        --  Triangle	
-            elsif waveForm = "0010" then
-        
-        
-        --  Saw 1
-            elsif waveForm = "0010" then
-        
-        
-        --  Saw 2    
-            elsif waveForm = "0010" then
-        
-        
-        --  Off
+        --  Counter increment
+            clkCnt <= clkCnt + 1;
+            F_s_clk <= F_s_clk + 1;
+            
+-------------------------------------------------------------------------------
+--          Triangle + Square
+-------------------------------------------------------------------------------
+            if waveForm = "01" then
+                
+                --  Set triangle down or up
+                if clkCnt = T then
+                    
+                    clkCnt <= 0;
+                    triangleState <= not triangleState;
+                  
+                end if;
+                
+                --  Increment
+                if F_s_clk = F_s then
+                
+                    F_s_clk <= 0;
+                    
+                    if triangleState = '1' then
+                    
+                        sum <= sum + inc;
+                        
+                    else
+                    
+                        sum <= sum - inc;
+                        
+                    end if;
+                    
+                end if;                
+                
+                triangleWave <= STD_LOGIC_VECTOR(to_unsigned(sum,22));
+                
+-------------------------------------------------------------------------------
+--          Saw
+-------------------------------------------------------------------------------
+            elsif waveForm = "10" or waveForm = "11" then
+            
+                --  Set triangle down or up
+                if clkCnt = T then
+                
+                    --F_s_clk <= 0;                                             -- TODO: Necessary?
+                
+                    if waveForm = "10" then
+                    
+                        --sum <= MIN;
+                        
+                    else
+                    
+                        --sum <= MAX;
+                        
+                    end if;
+                    
+                --  Increment
+                elsif F_s_clk = F_s then
+                
+                    F_s_clk <= 0;
+                    
+                    if waveForm = "10" then
+                    
+                        sum <= sum + inc;
+                        
+                    else
+                    
+                        sum <= sum - inc;
+                        
+                    end if;
+                    
+                end if;                
+                
+                sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,22));
+-------------------------------------------------------------------------------
+--          Off
+-------------------------------------------------------------------------------              
             else
             
                 output <= (OTHERS => '0');
             
             end if;
-        
-            clkCnt <= clkCnt + 1;
---                
---            if counter < duty then 
---                output <= (OTHERS => '0');
---            else
---                output <= (OTHERS => '1');
---            end if;
---            
---            counter <= counter + 1;
---            
---            if counter = period then
---                counter <= 0;
---            end if;
             
         end if;
         
