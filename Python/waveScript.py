@@ -139,8 +139,10 @@ def geometricWaves(detail):
 
 	if detail == 1:
 
+		print(len(allPeriodsIntMod4))
 		print("All the notes periods in integers where mod4 == 0\n")
 		print(allPeriodsIntMod4)
+		print(len(allPeriodsIntMod4))
 
 		print("\n\nAll the periods for their respective sampling frequencies\n")
 		print(allSampleFreqInt)
@@ -258,9 +260,9 @@ def printMIDI( ):
 	
 def main( ):
 
-	geometricWaves(0)		# 0 = Detailed list, 1 = list form
-	lfoWaves( )
-	printMIDI( )
+	geometricWaves(1)		# 0 = Detailed list, 1 = list form
+	#lfoWaves( )
+	#printMIDI( )
 	#printOutErrors( )
 	#print(strings.cp)
 
