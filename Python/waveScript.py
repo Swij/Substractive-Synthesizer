@@ -150,6 +150,15 @@ def geometricWaves(detail):
 		print("\n\nThe incrementation at every sampling point\n")
 		print(increment)
 
+	totalSim = 0
+	for i in range(len(allPeriodsIntMod4)):
+		totalSim += allPeriodsIntMod4[i]
+	ns = totalSim * Ts
+	print("Total clocks in the simulation = %i = %fns"%(totalSim,ns))
+	print(Ts)
+
+
+
 
 ################################################################################
 ##  LFO - Here we go!

@@ -28,15 +28,15 @@ signal sawWave      : STD_LOGIC_VECTOR(accSize-1 downto 0);
 
 signal triangleState : STD_LOGIC;
 
-signal T        : integer range 0 to 2**32 - 1;
-signal F_s      : integer range 0 to 2**32 - 1;
-signal F_s_clk  : integer range 0 to 2**32 - 1;
-signal duty     : integer range 0 to 2**32 - 1;
+signal T        : integer range 0 to 2**31 - 1;
+signal F_s      : integer range 0 to 2**31 - 1;
+signal F_s_clk  : integer range 0 to 2**31- 1;
+signal duty     : integer range 0 to 2**31 - 1;
 
-signal inc      : integer range 0 to 2**32 - 1;
-signal sum      : integer range 0 to 2**32 - 1;
+signal inc      : integer range 0 to 2**31 - 1;
+signal sum      : integer range 0 to 2**31 - 1;
 
-signal clkCnt   : integer range 0 to 2**32 - 1;
+signal clkCnt   : integer range 0 to 2**31 - 1;
 
 begin
 
@@ -45,12 +45,11 @@ begin
     begin
     if reset = '0' then
     
-        output <= (OTHERS => '0');
+        output <= (OTHERS => '1');
                 
         squareWave <= (OTHERS => '0');
         triangleWave <= (OTHERS => '0');
-        saw1Wave <= (OTHERS => '0');
-        saw2Wave <= (OTHERS => '0');
+        sawWave <= (OTHERS => '0');
 
         triangleState <= '1';
 
@@ -79,7 +78,7 @@ begin
             if waveForm = "00" then
                 
                 duty <= getT(to_integer(unsigned(note))) / 100 * to_integer(unsigned(dutyCycle));
-                squareWave <= ('1',OTHERS => '0');
+                squareWave <= ('0',OTHERS => '1');
                 output <= squareWave;
                                 
         --  Triangle	
@@ -91,17 +90,11 @@ begin
                 triangleWave <= (OTHERS => '0');
                 output <= triangleWave(accSize-1 downto 10);
         
-        --  Saw 1
+        --  Saw
             elsif waveForm = "10" then
         
-                saw1Wave <= ('1',OTHERS => '0');
-                output <= saw1Wave(accSize-1 downto 10);
-                
-        --  Saw 2    
-            elsif waveForm = "0011" then
-        
-                saw2Wave <= ('0',OTHERS => '1');
-                output <= saw2Wave(accSize-1 downto 10);
+                sawWave <= ('1',OTHERS => '0');
+                output <= sawWave(accSize-1 downto 10);
                 
             end if;
 -------------------------------------------------------------------------------
@@ -118,7 +111,7 @@ begin
 -------------------------------------------------------------------------------
 --          Triangle + Square
 -------------------------------------------------------------------------------
-            if waveForm = "01" then
+            if waveForm = "00" or waveForm = "01" then
                 
                 --  Set triangle down or up
                 if clkCnt = T then
@@ -143,7 +136,14 @@ begin
                         
                     end if;
                     
-                end if;                
+                end if;
+                
+                --  Square wave
+                if clkCnt = duty then
+                
+                    squareWave <= not squareWave;
+                    
+                end if;
                 
                 triangleWave <= STD_LOGIC_VECTOR(to_unsigned(sum,22));
                 
@@ -181,10 +181,12 @@ begin
                         sum <= sum - inc;
                         
                     end if;
-                    
+                
+                    sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,22));
+                
                 end if;                
                 
-                sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,22));
+                
 -------------------------------------------------------------------------------
 --          Off
 -------------------------------------------------------------------------------              
