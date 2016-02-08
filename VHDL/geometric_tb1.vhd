@@ -79,7 +79,7 @@ BEGIN
     wait for clk_period*10;
 
 
-    waveForm <= "00";
+    waveForm <= "01";
     dutyCycle <= "00110010";
     note <= "10000011";
     restart <= '1';
