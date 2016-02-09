@@ -22,7 +22,7 @@ signal reg : std_logic_vector(1 downto 0);
 begin
 
     encoder_process:
-	process(reset, clk)
+    process(reset, clk)
     begin
     
     if reset = '0' then

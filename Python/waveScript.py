@@ -5,7 +5,7 @@ min_ = -57						# -57 == C0
 max_ = 74 #- 12*3				#  74 == B10 ; 74 - 12*3 == B7
 ref = 440.0 					# The reference is A4
 
-nrOfIncBits = 22  				# Larger span gives better resolution
+nrOfIncBits = 18  				# Larger span gives better resolution
 								# 	although 10 bits will be truncated
 								#	for a 12 bit resolution
 
@@ -85,7 +85,7 @@ for n in range(min_,max_+1):
 			allPeriodsIntMod4.append(roundedClks + modFour)
 
 	# Sampling frequency period in int
-	samFactor = 10.0							# How fast the sampling is done
+	samFactor = 30.0							# How fast the sampling is done
 	samFreq = frequency * samFactor				# The sampling frequency..
 	samT = 1.0 / samFreq 						# 	and its period
 	nrOfClks = samT / Ts 						# How many clocks is in that period
@@ -115,27 +115,31 @@ def geometricWaves(detail):
 
 	# Triangle counts up half period then down, starts at zero
 	# Square follows the triangle and shifts (+-) at a set counter value
-	# Saw 1 and 2 counts different directions and have different starting values 
+	# Saw 1 and 2 counts different directions and have different starting values
+
+	# 4) Clock start
 
 	print("Notes: %i, Octaves = %i"%(len(allPeriodsIntMod2),len(allPeriodsIntMod2)/12))
 
 	increment = []							# List of increments at every sampling point
-	triAmp = 2**nrOfIncBits-1				# Amplitude with extra bits
+	triAmp = 2**(nrOfIncBits)				# Amplitude with extra bits
+	sampPoints = 30.0
+	increase = int(triAmp/(sampPoints-1))
+	incRest = triAmp % increase
 
 	for i in range(len(allPeriodsIntMod2)):
 		
-		Fs_tri1 = allSampleFreqInt[i]		# Sampling frequency for the triangle
-		increase = int(triAmp/Fs_tri1)
-		increment.append(increase)
+		#Fs_tri1 = allSampleFreqInt[i]		# Sampling frequency for the triangle
+		
 
 		if detail == 0:
 
 			print(allNames[i] + " = %f Hz, integer period = %i"%
 				(allFrequenciesFloat[i],allPeriodsIntMod2[i]))
 
-			print(("Fs period = %i\tIncrease = %i")%(Fs_tri1,increase))
-			print("Total triAmp1 = %i"%(increase*Fs_tri1))
-			print("Shifted amp = %i\n"%(int(increase*Fs_tri1)>>10))
+			#print(("Fs period = %i\tIncrease = %i")%(Fs_tri1,increase))
+			#print("Total triAmp1 = %i"%(increase*Fs_tri1))
+			#print("Shifted amp = %i\n"%(int(increase*Fs_tri1)>>10))
 
 	if detail == 1:
 
@@ -148,13 +152,17 @@ def geometricWaves(detail):
 		print(allSampleFreqInt)
 
 		print("\n\nThe incrementation at every sampling point\n")
-		print(increment)
+		#print(increase)
+
+	print("Triangle increase = %i, rest of = %i"%(increase*2,0))
+	print("Saw increase = %i, rest of = %i"%(increase,incRest))
+
 
 	totalSim = 0
 	for i in range(len(allPeriodsIntMod4)):
 		totalSim += allPeriodsIntMod4[i]
 	ns = totalSim * Ts
-	print("Total clocks in the simulation = %i = %fns"%(totalSim,ns))
+	print("Total clocks in the simulation = %i = %s"%(totalSim,ns))
 	print(Ts)
 
 
