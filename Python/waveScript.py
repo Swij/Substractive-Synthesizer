@@ -154,7 +154,9 @@ def geometricWaves(detail):
 		print("\n\nThe incrementation at every sampling point\n")
 		#print(increase)
 
-	print("Triangle increase = %i, rest of = %i"%(increase*2,0))
+	increase2 = (2**(nrOfIncBits-1)-1)/8
+	increase2mod = 2**(nrOfIncBits-1)%8
+	print("Triangle increase = %i, rest of = %i"%(increase2,increase2mod))
 	print("Saw increase = %i, rest of = %i"%(increase,incRest))
 
 

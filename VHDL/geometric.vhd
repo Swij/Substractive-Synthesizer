@@ -87,10 +87,10 @@ begin
         --  Triangle    
             elsif waveForm = "01" then
 
-                clkCnt <= getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/20;
+                clkCnt <= getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/30;
                 sum <= 0;
-                T <= getT(to_integer(unsigned(note))) / 2;
-                inc <= getInc(0);
+                T <= getT(to_integer(unsigned(note)));
+                inc <= getInc(2);
                 
                 triangleState <= '1';
                 
@@ -141,11 +141,19 @@ begin
             if waveForm = "00" or waveForm = "01" then
                 
                 --  Set triangle down or up
-                if clkCnt = T then
+                if clkCnt = T/4 then
                     
-                    clkCnt <= 0;
+                --    clkCnt <= 0;
                     triangleState <= not triangleState;
-                  
+                    
+                elsif clkCnt = 3*T/4 then
+                
+                    triangleState <= not triangleState;
+                
+                elsif clkCnt = T then
+                
+                    clkCnt <= 0;                    
+                                        
                 end if;
                 
                 --  Increment
@@ -215,9 +223,6 @@ begin
                         sum <= sum - inc;
                         
                     end if;
-                    
-                    
-                    
                 
                 end if;
                 
