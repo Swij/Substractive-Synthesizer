@@ -5,9 +5,9 @@ use IEEE.NUMERIC_STD.ALL;
 entity cordicStage is
  
     generic(
-        i     : natural := 1;
-        XY_SZ : natural := 16;
-        STG   : natural := 16
+        i      : natural := 1;
+        XY_SZ  : natural := 16;
+        STAGES : natural := 16
     );
     port(
         clk     : in STD_LOGIC;
@@ -25,20 +25,17 @@ entity cordicStage is
   );
 end cordicStage;
 
-architecture Behavioral of cordicStage is
+architecture arch_cordicStage of cordicStage is
 
 signal Z_sign : std_logic;
-signal X_shr : std_logic_vector(STG downto 0);
-signal Y_shr : std_logic_vector(STG downto 0);
-
---wire Z_sign;
---wire signed  [XY_SZ:0] X_shr, Y_shr; 
+signal X_shr : std_logic_vector(STAGES downto 0);
+signal Y_shr : std_logic_vector(STAGES downto 0);
 
 begin
 
-    X_shr <= std_logic_vector(shift_right(signed(Xin),i));      -- >>> i; -- signed shift right
-    Y_shr <= std_logic_vector(shift_right(signed(Yin),i));      -- Y >>> i;   
-    Z_sign <= Zin(XY_SZ-1);                                     -- Z[i][31];
+    X_shr <= std_logic_vector(shift_right(signed(Xin),i));
+    Y_shr <= std_logic_vector(shift_right(signed(Yin),i));   
+    Z_sign <= Zin(XY_SZ-1);
     
     process(reset, clk)
     begin
@@ -63,29 +60,5 @@ begin
 
     end if;
     
-    
---    genvar i;
---    generate
---    for (i=0; i < (STG-1); i=i+1)
---    begin: XYZ
-
-    
---       assign X_shr = X[i] >>> i; -- signed shift right
---       assign Y_shr = Y[i] >>> i;
-    
---       //the sign of the current rotation angle
---       assign Z_sign = Z(i)(31);--Z[i][31]; // Z_sign = 1 if Z[i] < 0
-    
---       always @(posedge clock)
---       begin
---          // add/subtract shifted data
---          X[i+1] <= Z_sign ? X[i] + Y_shr         : X[i] - Y_shr;
---          Y[i+1] <= Z_sign ? Y[i] - X_shr         : Y[i] + X_shr;
---          Z[i+1] <= Z_sign ? Z[i] + atan_table[i] : Z[i] - atan_table[i];
---       end
---    end
---    endgenerate
-    
-    
 end process;
-end Behavioral;
+end arch_cordicStage;
