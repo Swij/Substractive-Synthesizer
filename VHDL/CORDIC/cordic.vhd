@@ -43,17 +43,11 @@ architecture Behavioral of cordic is
     signal X : regXY;
     signal Y : regXY;
     signal Z : regZ;
-    -- Note: The atan_table was chosen to be 31 bits wide giving resolution up to atan(2^-30)
     signal atan_table : regATAN := (
-    -- upper 2 bits = 2'b00 which represents 0 - PI/2 range
-    -- upper 2 bits = 2'b01 which represents PI/2 to PI range
-    -- upper 2 bits = 2'b10 which represents PI to 3*PI/2 range (i.e. -PI/2 to -PI)
-    -- upper 2 bits = 2'b11 which represents 3*PI/2 to 2*PI range (i.e. 0 to -PI/2)
-    -- The upper 2 bits therefore tell us which quadrant we are in.
-           "00100000000000000000000000000000",  -- 45.000 degrees -> atan(2^0)
-           "00010010111001000000010100011101",  -- 26.565 degrees -> atan(2^-1)
-           "00001001111110110011100001011011",  -- 14.036 degrees -> atan(2^-2)
-           "00000101000100010001000111010100",  -- atan(2^-3)
+           "00100000000000000000000000000000",
+           "00010010111001000000010100011101",
+           "00001001111110110011100001011011",
+           "00000101000100010001000111010100",
            "00000010100010110000110101000011",
            "00000001010001011101011111100001",
            "00000000101000101111011000011110",
@@ -96,16 +90,16 @@ begin
         elsif rising_edge(clk) then
             case quadrant is
                 when "00" | "11" => -- no pre-rotation needed for these quadrants
-                    X(0) <= '0' & Xin;
-                    Y(0) <= '0' & Yin;
+                    X(0) <= std_logic_vector(resize(signed(Xin),X(0)'length));  -- Xin
+                    Y(0) <= std_logic_vector(resize(signed(Yin),Y(0)'length));  -- Yin
                     Z(0) <= angle;
                 when "01" =>
-                    X(0) <= '0' & std_logic_vector(0-signed(Yin)); -- only true if yin is zero
-                    Y(0) <= '0' & Xin;
+                    X(0) <= std_logic_vector(resize(-signed(Yin),X(0)'length)); -- -Yin
+                    Y(0) <= std_logic_vector(resize(signed(Xin),Y(0)'length));  -- Xin
                     Z(0) <= "00" & angle(29 downto 0); -- subtract pi/2 from angle for this quadrant
                 when "10" =>
-                    X(0) <= '0' & Yin;
-                    Y(0) <= '1' & std_logic_vector(0-signed(Xin));
+                    X(0) <= std_logic_vector(resize(signed(Yin),X(0)'length));  -- Yin
+                    Y(0) <= std_logic_vector(resize(-signed(Xin),Y(0)'length)); -- -Xin
                     Z(0) <= "11" & angle(29 downto 0); -- add pi/2 to angle for this quadrant
                 when others =>
             end case;
