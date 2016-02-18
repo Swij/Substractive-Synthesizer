@@ -78,8 +78,8 @@ BEGIN
 
     wait for clk_period*10;
 
-    waveForm <= "01";
-    dutyCycle <= "00010010";
+    waveForm <= "10";
+    dutyCycle <= "00110010";
     note <= "10000011";
     restart <= '1';
     
@@ -92,8 +92,7 @@ BEGIN
     
     for i in 131 downto 0 loop
 
-        wait for clk_period*getT(i);  --  Run two periods.
-        --wait for clk_period*getT(i);
+        wait for clk_period*getT(i);
         
         enable <= '0';
         restart <= '1';
@@ -101,7 +100,6 @@ BEGIN
         note <= std_logic_vector(unsigned(note) - 1);
         wait for clk_period;
         
-        --note <= std_logic_vector(to_integer(unsigned(note)) + 1);
         
         enable <= '1';
         restart <= '0';

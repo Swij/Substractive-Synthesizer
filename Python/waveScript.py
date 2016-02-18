@@ -85,8 +85,8 @@ for n in range(min_,max_+1):
 			allPeriodsIntMod4.append(roundedClks + modFour)
 
 	# Sampling frequency period in int
-	samFactor = 30.0							# How fast the sampling is done
-	samFreq = frequency * samFactor				# The sampling frequency..
+	samFactor = 32.0							# How fast the sampling is done
+	samFreq = frequency * (samFactor)				# The sampling frequency..
 	samT = 1.0 / samFreq 						# 	and its period
 	nrOfClks = samT / Ts 						# How many clocks is in that period
 	allSampleFreqFloat.append(nrOfClks)
@@ -123,7 +123,7 @@ def geometricWaves(detail):
 
 	increment = []							# List of increments at every sampling point
 	triAmp = 2**(nrOfIncBits)				# Amplitude with extra bits
-	sampPoints = 30.0
+	sampPoints = 32.0
 	increase = int(triAmp/(sampPoints-1))
 	incRest = triAmp % increase
 
@@ -164,7 +164,7 @@ def geometricWaves(detail):
 	for i in range(len(allPeriodsIntMod4)):
 		totalSim += allPeriodsIntMod4[i]
 	ns = totalSim * Ts
-	print("Total clocks in the simulation = %i = %s"%(totalSim,ns))
+	print("Total clocks in the simulation = %i = %ss"%(totalSim,ns))
 	print(Ts)
 
 

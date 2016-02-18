@@ -27,15 +27,15 @@ end cordicStage;
 
 architecture arch_cordicStage of cordicStage is
 
-signal Z_sign : std_logic;
-signal X_shr  : std_logic_vector(XY_SZ downto 0);
-signal Y_shr  : std_logic_vector(XY_SZ downto 0);
+--signal Z_sign : std_logic;
+signal X_shr : std_logic_vector(XY_SZ downto 0);
+signal Y_shr : std_logic_vector(XY_SZ downto 0);
 
 begin
 
-    --X_shr <= std_logic_vector(shift_right(signed(Xin),i));
-    --Y_shr <= std_logic_vector(shift_right(signed(Yin),i));   
-    Z_sign <= Zin(XY_SZ-1);
+    X_shr <= std_logic_vector(shift_right(signed(Xin),i));
+    Y_shr <= std_logic_vector(shift_right(signed(Yin),i));   
+    --Z_sign <= ;
     
     process(reset, clk)
     begin
@@ -45,6 +45,7 @@ begin
         Xout <= (OTHERS => '0');
         Yout <= (OTHERS => '0');
         Zout <= (OTHERS => '0');
+        
 --        X_shr <= (OTHERS => '0');
 --        Y_shr <= (OTHERS => '0'); 
 --        Z_sign <= '0';
@@ -52,33 +53,33 @@ begin
     elsif rising_edge(clk) then
 
 
-        if Z_sign = '1' then
+--        if Z_sign = '1' then
 
-            Xout <= std_logic_vector(signed(Xin) + signed(shift_right(signed(Yin),i)));            
-            Yout <= std_logic_vector(signed(Yin) - signed(shift_right(signed(Xin),i)));
-            Zout <= std_logic_vector(signed(Zin) + signed(atan));
+--            Xout <= std_logic_vector(signed(Xin) + signed(shift_right(signed(Yin),i)));            
+--            Yout <= std_logic_vector(signed(Yin) - signed(shift_right(signed(Xin),i)));
+--            Zout <= std_logic_vector(signed(Zin) + signed(atan));
 
-        else
+--        else
 
-            Xout <= std_logic_vector(signed(Xin) - signed(shift_right(signed(Yin),i)));
-            Yout <= std_logic_vector(signed(Yin) + signed(shift_right(signed(Xin),i)));
-            Zout <= std_logic_vector(signed(Zin) - signed(atan));        
+--            Xout <= std_logic_vector(signed(Xin) - signed(shift_right(signed(Yin),i)));
+--            Yout <= std_logic_vector(signed(Yin) + signed(shift_right(signed(Xin),i)));
+--            Zout <= std_logic_vector(signed(Zin) - signed(atan));        
 
-        end if;
+--        end if;
 
---                if Z_sign = '1' then
+                if Zin(XY_SZ-1) = '1' then
         
---                    Xout <= std_logic_vector(signed(Xin) + signed(Y_shr));            
---                    Yout <= std_logic_vector(signed(Yin) - signed(X_shr));
---                    Zout <= std_logic_vector(signed(Zin) + signed(atan));
+                    Xout <= std_logic_vector(signed(Xin) + signed(Y_shr));            
+                    Yout <= std_logic_vector(signed(Yin) - signed(X_shr));
+                    Zout <= std_logic_vector(signed(Zin) + signed(atan));
         
---                else
+                else
         
---                    Xout <= std_logic_vector(signed(Xin) - signed(Y_shr));
---                    Yout <= std_logic_vector(signed(Yin) + signed(X_shr));
---                    Zout <= std_logic_vector(signed(Zin) - signed(atan));        
+                    Xout <= std_logic_vector(signed(Xin) - signed(Y_shr));
+                    Yout <= std_logic_vector(signed(Yin) + signed(X_shr));
+                    Zout <= std_logic_vector(signed(Zin) - signed(atan));        
         
---                end if;        
+                end if;        
 
     end if;
     

@@ -5,8 +5,10 @@ use IEEE.NUMERIC_STD.ALL;
 use work.geometryPackage.all;
 
 entity geometric is
-    generic(accSize : natural := 18;
-    dacWidth : natural := 12);
+    generic(
+        accSize : natural := 18;
+        dacWidth : natural := 12
+    );
     port( 
         clk         : in STD_LOGIC;
         reset       : in STD_LOGIC;
@@ -15,6 +17,7 @@ entity geometric is
         waveForm    : in STD_LOGIC_VECTOR (1 downto 0);
         note        : in STD_LOGIC_VECTOR (7 downto 0);
         dutyCycle   : in STD_LOGIC_VECTOR (7 downto 0);
+        --semi        : in STD_LOGIC_VECTOR (4 downto 0);
         
         restart     : in STD_LOGIC;
         output      : out STD_LOGIC_VECTOR (11 downto 0)
@@ -68,7 +71,6 @@ begin
 -------------------------------------------------------------------------------
         if restart = '1' then
     
-            --T   <= getT(to_integer(unsigned(note)));
             F_s <= getFs(to_integer(unsigned(note)));
             F_s_clk <= 0;
 
@@ -87,7 +89,8 @@ begin
         --  Triangle    
             elsif waveForm = "01" then
 
-                clkCnt <= getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/30;
+                --  Phase shift the clock
+                clkCnt <= getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/32;
                 sum <= 0;
                 T <= getT(to_integer(unsigned(note)));
                 inc <= getInc(2);
@@ -140,10 +143,11 @@ begin
 -------------------------------------------------------------------------------
             if waveForm = "00" or waveForm = "01" then
                 
-                --  Set triangle down or up
+                ----------------------------------------------------------------
+                --  Set triangle state - down or up
+                ----------------------------------------------------------------
                 if clkCnt = T/4 then
                     
-                --    clkCnt <= 0;
                     triangleState <= not triangleState;
                     
                 elsif clkCnt = 3*T/4 then
@@ -155,8 +159,9 @@ begin
                     clkCnt <= 0;                    
                                         
                 end if;
-                
-                --  Increment
+                ----------------------------------------------------------------
+                --  Sample Increment
+                ----------------------------------------------------------------
                 if F_s_clk = F_s then
                 
                     F_s_clk <= 0;
@@ -172,8 +177,9 @@ begin
                     end if;
                     
                 end if;
-                
+                ----------------------------------------------------------------
                 --  Square wave
+                ----------------------------------------------------------------
                 if clkCnt = duty then
                 
                     squareWave <= not squareWave;
@@ -183,9 +189,13 @@ begin
                 triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,accSize));
                 
                 if waveForm = "00" then
+                
                     output <= squareWave;
+                    
                 else
+                
                     output <= triangleWave(17 downto 6);
+                    
                 end if;
                 
 -------------------------------------------------------------------------------
@@ -196,7 +206,7 @@ begin
                 --  Set triangle down or up
                 if clkCnt = T then
                 
-                    F_s_clk <= 0;                                             -- TODO: Necessary?
+                    F_s_clk <= 0;
                     clkCnt <= 0;
                     
                     if waveForm = "10" then

@@ -73,18 +73,14 @@ BEGIN
    
        Xin <= std_logic_vector(to_signed(VALUE,16)); --  Xout = 32000*cos(angle)
        Yin <= (OTHERS => '0');                 --  Yout = 32000*sin(angle)
-       angle <= (31 => '0', 30 => '1', OTHERS => '0');
        
-       --BYTE<= (7 => '1', 5 downto 1 => '1', 6 => B_BIT, others => '0');
-   --14606
+       --angle <= (31 => '0', 30 => '1', OTHERS => '0');
+       
+       
     reset <= '0';
-   
-      -- hold reset state for 100 ns.
-      wait for 100 ns;	
-
+    wait for clk_period*2;
     reset <= '1';
-
-      wait for clk_period*10;
+    wait for clk_period*2;
 
       -- insert stimulus here
       for i in 0 to 359 loop    --  from 0 to 359 degrees in 1 degree increments
@@ -95,14 +91,12 @@ BEGIN
          --angle <= std_logic_vector(to_signed( (2**31 - 1)/360*i,32) ); -- example: 45 deg = 45/360 * 2^32 = 32'b00100000000000000000000000000000 = 45.000 degrees -> atan(2^0)
          --angle <= (others => '0');
          --angle <= "00000000101101100000101101100000";
+         
          angle <= std_logic_vector(signed(oneDegree) + signed(angle));
-         wait for clk_period*5;
-         
-         
+         wait for clk_period;
          
       end loop;
-
-      wait;
+      
    end process;
 
  

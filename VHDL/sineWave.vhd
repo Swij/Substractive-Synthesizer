@@ -127,6 +127,7 @@ begin
             elsif quadrant = "01" then
                 
                 --X(0) <= std_logic_vector(to_signed((0-to_integer(signed(Yin))),XY_SZ+1));
+                
                 if Yin(XY_SZ-1) = '0' then
                     X(0) <= "1" & std_logic_vector(signed(not(Yin)) + 1);
                 else
@@ -140,6 +141,7 @@ begin
             
                 X(0) <= "0" & Yin;
                 --Y(0) <= std_logic_vector(to_signed((0-to_integer(signed(Xin))),XY_SZ+1));
+                
                 if Xin(XY_SZ-1) = '0' then
                     Y(0) <= "1" & std_logic_vector(signed(not(Xin)) + 1);
                 else
@@ -162,7 +164,7 @@ begin
         begin stage:
         entity work.cordicStage
         generic map(
-            i+1, 
+            i, 
             XY_SZ, 
             STAGES
         )
