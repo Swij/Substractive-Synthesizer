@@ -9,15 +9,13 @@ ARCHITECTURE behavior OF cordic_tb IS
  
     -- Component Declaration for the Unit Under Test (UUT)
     COMPONENT cordic
-    PORT(
-         clk : IN  std_logic;
-         reset : IN  std_logic;
-         angle : IN  std_logic_vector(31 downto 0);
-         Xin : IN  std_logic_vector(15 downto 0);
-         Yin : IN  std_logic_vector(15 downto 0);
-         Xout : OUT  std_logic_vector(16 downto 0);
-         Yout : OUT  std_logic_vector(16 downto 0)
-        );
+    PORT( clk : IN  std_logic;
+          reset : IN  std_logic;
+          angle : IN  std_logic_vector(31 downto 0);
+          Xin : IN  std_logic_vector(15 downto 0);
+          Yin : IN  std_logic_vector(15 downto 0);
+          Xout : OUT  std_logic_vector(16 downto 0);
+          Yout : OUT  std_logic_vector(16 downto 0));
     END COMPONENT;
     
    --Inputs

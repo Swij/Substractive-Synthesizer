@@ -110,15 +110,7 @@ begin
     stages:for i in 0 to (STG-2) generate
     stageX:cstage
         generic map ( XY_SZ, STG, i)
-        port map (  clk,
-                    reset,
-                    X(i),
-                    Y(i),
-                    Z(i),
-                    atan_table(i),
-                    X(i+1),
-                    Y(i+1),
-                    Z(i+1));
+        port map ( clk, reset, X(i), Y(i), Z(i), atan_table(i), X(i+1), Y(i+1), Z(i+1));
     end generate;
     
     -- Output
