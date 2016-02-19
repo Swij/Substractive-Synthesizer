@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use work.aids.ALL;
 
 entity oscillator_tb is
 end oscillator_tb;
@@ -13,7 +14,7 @@ architecture Behavioral of oscillator_tb is
                 reset : in STD_LOGIC;
                 enable : in STD_LOGIC;
                 frequency : in STD_LOGIC_VECTOR (12 downto 0);
-                wave : in STD_LOGIC_VECTOR (3 downto 0);
+                wave : in WAVE;
                 output : out STD_LOGIC_VECTOR (16 downto 0));
     end component;
     
@@ -22,7 +23,7 @@ architecture Behavioral of oscillator_tb is
     signal reset : STD_LOGIC := '0';
     signal enable : STD_LOGIC := '0';
     signal frequency : STD_LOGIC_VECTOR (12 downto 0) := (others => '0');
-    signal wave : STD_LOGIC_VECTOR (3 downto 0) := (others => '0');
+    signal wave : WAVE := SINE;
     
     -- Outputs
     signal output : STD_LOGIC_VECTOR (16 downto 0);
@@ -51,11 +52,10 @@ begin
         wait for 10 ns;
         reset <= '1';
         enable <= '1';
-        wave <= "0000";
         
         wait for clk_period*468;
         
-        wave <= "0001";
+        wave <= COSINE;
 
         
         wait for clk_period*468;
