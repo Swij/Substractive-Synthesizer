@@ -17,7 +17,7 @@ ENTITY Uart IS
 		Data_in		: in STD_LOGIC;
 		Reset		: in STD_LOGIC;
 		Clock		: in STD_LOGIC;
-		
+		Data_send	: out STD_LOGIC;
 		Data_out	: out STD_LOGIC_VECTOR(7 DOWNTO 0)
 	);
 END Uart;
@@ -40,6 +40,7 @@ PROCESS(clk, Reset)
 		Uart_state <= Idle;							
 		Data_acc <= (OTHERS => '0');
 		Bit_counter <= 0;
+		Data_send <= '0';
 	
 	ELSIF rising_edge(Clock) THEN					-- Triggering once every sent bit
 			
@@ -47,9 +48,12 @@ PROCESS(clk, Reset)
 			
 		WHEN Idle =>								-- Wait for low input to indicate the start of a Byte
 			
+			Data_send <= '0';
+			Bit_counter <= 0;
+			Data_out <= (OTHERS => '0');
+			
 			IF (Data_in = '0') THEN
 				
-				Bit_counter <= 0;
 				Uart_state <= Recieve;
 				
 			END IF;
@@ -69,6 +73,7 @@ PROCESS(clk, Reset)
 			
 			Data_out <= Data_acc;
 			Uart_state <= Idle;
+			Data_send <= '1';
 		
 		END CASE;
 	END IF;

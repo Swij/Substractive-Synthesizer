@@ -15,10 +15,10 @@ END Uart_TB;
 ARCHITECTURE Uart_TB_arch OF Uart_TB IS
 
 	SIGNAL Data_in_tb : STD_LOGIC;
-	SIGNAL Clock_tb : STD_LOGIC;
+	SIGNAL Clock_tb : STD_LOGIC:='0';
 	SIGNAL Reset : STD_LOGIC;
 	SIGNAL Data_Recieved : STD_LOGIC_VECTOR(7 DOWNTO 0);
-	SIGNAL Clock_period : INTEGER;
+	SIGNAL Clock_period : TIME;
 	
 	COMPONENT Uart
 		PORT ( 
@@ -31,8 +31,7 @@ ARCHITECTURE Uart_TB_arch OF Uart_TB IS
 	END COMPONENT;
 	
 BEGIN
-	
-	Clock_period <= 32;
+	Clock_period <= 32 ns;
 	
 Test_proc:
 	PROCESS
@@ -41,7 +40,7 @@ Test_proc:
 	Data_in_tb <= '1';
 	Reset <= '1';
 	
-	WAIT FOR 5+Clock_period*2;
+	WAIT FOR Clock_period*2;
 		Reset <= '0';
 	WAIT FOR Clock_period;
 		Data_in_tb <= '0';
@@ -63,8 +62,10 @@ Test_proc:
 		Data_in_tb <= '0';
 	WAIT FOR Clock_period;	
 		Data_in_tb <= '1';
+	WAIT FOR Clock_period*2;
 		ASSERT (Data_Recieved = "01010101")
-		REPORT ("Data Recieved is faulty")
+		REPORT ("Data Recieved is faulty");
+END PROCESS test_proc;
 Uart_inst: Uart 
 	PORT MAP (
 		Data_in_tb,
@@ -77,11 +78,11 @@ clk_proc:
 	PROCESS
 	BEGIN
 	
-		WAIT FOR Clock_period/2 ns;
+		WAIT FOR 16 ns;
 		Clock_tb<=NOT(Clock_tb);
 	
 	END PROCESS clk_proc;	
 	
 	
 	
-END Uart_TB_arch
+END Uart_TB_arch;
