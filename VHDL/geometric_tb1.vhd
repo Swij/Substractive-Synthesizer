@@ -19,7 +19,7 @@ ARCHITECTURE behavior OF geometric_tb1 IS
         waveForm : IN  std_logic_vector(1 downto 0);
         note : IN  std_logic_vector(7 downto 0);
         dutyCycle : IN  std_logic_vector(7 downto 0);
-        restart : IN  std_logic;
+        semi        : in STD_LOGIC_VECTOR (4 downto 0);
         output : OUT  std_logic_vector(11 downto 0)
     );
     END COMPONENT;
@@ -32,6 +32,7 @@ ARCHITECTURE behavior OF geometric_tb1 IS
     signal waveForm : std_logic_vector(1 downto 0) := (others => '0');
     signal note : std_logic_vector(7 downto 0) := (others => '0');
     signal dutyCycle : std_logic_vector(7 downto 0) := (others => '0');
+    signal semi : std_logic_vector(4 downto 0) := (others => '0');
     signal restart : std_logic := '0';
 
     --Outputs
@@ -53,7 +54,7 @@ BEGIN
         waveForm =>     waveForm,
         note =>         note,
         dutyCycle =>    dutyCycle,
-        restart =>      restart,
+        semi =>         semi,
         output =>       output
     );
 
@@ -73,37 +74,25 @@ BEGIN
     begin		
     
     reset <= '0';
+    
+    enable <= '0';
+    waveForm <= "00";
+    dutyCycle <= "01010010";
+    note <= "10000011";
+    
+    
     wait for 100 ns;
     reset <= '1';
-
-    wait for clk_period*10;
-
-    waveForm <= "10";
-    dutyCycle <= "00110010";
-    note <= "10000011";
-    restart <= '1';
-    
-    wait for clk_period; 
-    
-    restart <= '0';   
     enable <= '1';
-    
-    wait for clk_period;
+    wait for clk_period;   
     
     for i in 131 downto 0 loop
 
-        wait for clk_period*getT(i);
+        wait for clk_period*getT(i)*4;
         
-        enable <= '0';
-        restart <= '1';
+        waveForm <= std_logic_vector(to_unsigned(i mod 4,2));
         
         note <= std_logic_vector(unsigned(note) - 1);
-        wait for clk_period;
-        
-        
-        enable <= '1';
-        restart <= '0';
-        
         wait for clk_period;
         
     end loop;
@@ -112,3 +101,4 @@ BEGIN
     end process;
 
 END;
+

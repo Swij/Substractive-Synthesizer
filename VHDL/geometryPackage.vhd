@@ -4,7 +4,8 @@ use IEEE.NUMERIC_STD.ALL;
 
 package geometryPackage is
 
-type romArray is array (0 to 132-1) of integer;
+constant romSize : natural := 132;
+type romArray is array (0 to romSize-1) of integer;
 type incArray is array (0 to 2) of integer;
 
 -- All the notes periods in integers where mod4 == 0
@@ -18,7 +19,9 @@ constant inc : incArray := (18078, 8456, 16383);--9096
 function getT (input : integer) return integer;
 function getFs (input : integer) return integer;
 function getInc (input : integer) return integer;
-
+function getSemiT (note : integer; semi : integer) return integer;
+function getSemiF (note : integer; semi : integer) return integer;
+--
 end geometryPackage;
 
 package body geometryPackage is
@@ -38,4 +41,57 @@ package body geometryPackage is
         return inc(input);
     end getInc;
 
+    function getSemiT (note : integer; semi : integer) return integer is
+    begin
+
+        if note = 0 and semi < 0 then           --  No return of low
+        
+            return T(0);
+            
+        elsif note = (romSize-1) and semi > 0 then   --  and no return of high...
+        
+            return T(romSize-1);
+            
+        else
+            if semi < 0 and semi > -12 then     --  it is negative
+                
+                 return (T(note-1) - T(note)) / 12 * semi;
+            
+            else                                --  positive
+                
+                 return (T(note) - T(note+1)) / 12 * semi;
+                 
+            end if;
+            
+        end if;
+    end getSemiT;
+
+
+    function getSemiF (note : integer; semi : integer) return integer is
+    begin
+
+        if note = 0 and semi < 0 then                --  No return of low
+        
+            return F_s(0);
+            
+        elsif note = (romSize-1) and semi > 0 then   --  and no return of high...
+        
+            return F_s(romSize-1);
+            
+        else
+        
+            if semi < 0 and semi > -12 then     --  it is negative
+                
+                 return (F_s(note-1) - F_s(note)) / 12 * (semi);
+            
+            else                                --  positive
+                
+                 return (F_s(note) - F_s(note+1)) / 12 * semi;
+                 
+            end if;
+            
+        end if;
+        
+    end getSemiF;
+        
 end geometryPackage;

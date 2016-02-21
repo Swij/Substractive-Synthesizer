@@ -4,82 +4,101 @@ use ieee.numeric_std.ALL;
 use work.aids.ALL;
 
 entity oscillator is
-    Port (  clk : in STD_LOGIC;
-            reset : in STD_LOGIC;
-            enable : in STD_LOGIC;
-            frequency : in STD_LOGIC_VECTOR (12 downto 0);
-            wave : in WAVE;
-            output : out STD_LOGIC_VECTOR (16 downto 0));
+    port( clk       : in STD_LOGIC;
+          reset     : in STD_LOGIC;
+          enable    : in STD_LOGIC;
+          wave      : in STD_LOGIC_VECTOR (2 downto 0);
+          note      : in STD_LOGIC_VECTOR (7 downto 0);
+          semi      : in STD_LOGIC_VECTOR (4 downto 0);
+          dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
+          output    : out STD_LOGIC_VECTOR (11 downto 0)
+    );
 end oscillator;
 
 architecture arch_oscillator of oscillator is
-    constant VALUE : integer := 19429; -- 32000 / 1.647;
-    signal ang_count : integer range 0 to 359;
-    signal sine_out : std_logic_vector(16 downto 0);
-    signal cos_out : std_logic_vector(16 downto 0);
-    signal angle : std_logic_vector(31 downto 0);
+
+    component sineWave
+    port( clk    : in STD_LOGIC;
+          reset  : in STD_LOGIC;
+          enable : in STD_LOGIC;
+          note   : in STD_LOGIC_VECTOR (7 downto 0);
+          semi   : in STD_LOGIC_VECTOR (4 downto 0);
+          sinOut : out STD_LOGIC_VECTOR (16 downto 0);
+          cosOut : out STD_LOGIC_VECTOR (16 downto 0) );
+    end component;
+
+    component geometric
+    generic( accSize  : natural := 18;
+             dacWidth : natural := 12 );
+    port( clk       : in STD_LOGIC;
+          reset     : in STD_LOGIC;
+          enable    : in STD_LOGIC;
+          waveForm  : in STD_LOGIC_VECTOR (1 downto 0);
+          note      : in STD_LOGIC_VECTOR (7 downto 0);
+          dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
+          semi      : in STD_LOGIC_VECTOR (4 downto 0);
+          restart   : in STD_LOGIC;
+          output    : out STD_LOGIC_VECTOR (11 downto 0));
+    end component;
+
+    signal out_sin : STD_LOGIC_VECTOR (16 downto 0);
+    signal out_cos : STD_LOGIC_VECTOR (16 downto 0);
+    signal out_geo : STD_LOGIC_VECTOR (11 downto 0);
     
-    COMPONENT cordic
-    PORT( clk : IN  std_logic;
-          reset : IN  std_logic;
-          angle : IN  std_logic_vector(31 downto 0);
-          Xin : IN  std_logic_vector(15 downto 0);
-          Yin : IN  std_logic_vector(15 downto 0);
-          Xout : OUT  std_logic_vector(16 downto 0);
-          Yout : OUT  std_logic_vector(16 downto 0));
-    END COMPONENT;
 begin
-    cordic_comp:cordic
-        port map (  clk, 
-                    reset,
-                    angle, 
-                    std_logic_vector(to_signed(VALUE,16)), 
-                    (others => '0'), 
-                    sine_out, 
-                    cos_out );
+
+sineWave_comp: sineWave
+    port map( clk, reset, enable, note, semi, out_sin, out_cos );
+    
+geometry_comp: geometric
+    port map( clk, reset, enable, wave(1 to 0), note, dutyCycle, semi, out_geo);
+
+osc_process:
+process(reset, clk)
+begin
+
+    if reset = '0' then
+    
+        output <= (OTHERS => '0');
         
-    osc_ctrl:process(reset, clk)
-    begin
-        if reset = '0' then
+    elsif rising_edge(clk) then
+    
+        if enable = '1' then
+        
+            case wave is
+                    
+                when "000" => -- Square
+                     output <= out_geo;
+                     
+                when "001" => -- Triangle
+                    output <= out_geo;
+                    
+                when "010" => -- Saw 1
+                    output <= out_geo;
+                    
+                when "011" => -- Saw 2
+                    output <= out_geo;
+                            
+                when "100" => -- Sine
+                    output <= out_sin(16 downto 5);
+                    
+                when "101" => -- Cosine
+                    output <= out_cos(16 downto 5);
+                    
+                when "110" => -- Noise
+                    output <= out_geo;
+                    
+                when others =>
+                    output <= (OTHERS => '0');
+                    
+            end case;
+        
+        else
+          
             output <= (OTHERS => '0');
-        elsif rising_edge(clk) then
-            if enable = '1' then
-                case wave is
-                    when SINE => -- Sine
-                        output <= sine_out;
-                    when COSINE => -- Cosine
-                        output <= cos_out;
-                    when SQUARE => -- Square
-                         output <= (OTHERS => '1');
-                    when TRIANGLE => -- Triangle
-                        output <= (OTHERS => '1');
-                    when SAW1 => -- Saw 1
-                        output <= (OTHERS => '1');
-                    when SAW2 => -- Saw 2
-                        output <= (OTHERS => '1');
-                    when NOISE => -- Noise
-                        output <= (OTHERS => '1');
-                    when others =>
-                        output <= (OTHERS => '0');
-                end case;
-            end if;
+            
         end if;
-	end process;
-	
-	counter:process(reset, clk)
-	begin
-        if reset = '0' then
-            ang_count <= 0;
-            angle <= (others => '0');
-        elsif rising_edge(clk) then
-            if enable = '1' then
-                angle <= angles(ang_count);
-                if ang_count < 359 then
-                    ang_count <= ang_count+1;
-                else
-                    ang_count <= 0;
-                end if;
-            end if;
-        end if;
-	end process;
+    end if;
+end process;
+
 end arch_oscillator;

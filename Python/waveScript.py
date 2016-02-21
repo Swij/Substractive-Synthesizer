@@ -167,6 +167,17 @@ def geometricWaves(detail):
 	print("Total clocks in the simulation = %i = %ss"%(totalSim,ns))
 	print(Ts)
 
+def sineWaves( ):
+
+	sinePeriods = []
+
+	for i in range(len(allPeriodsInt)):
+
+		sinePeriods.append(round(allPeriodsFloat[i]/360.0))
+
+	print("Sine angle delay in clks:")
+	print(sinePeriods)
+		
 
 
 
@@ -280,6 +291,7 @@ def printMIDI( ):
 def main( ):
 
 	geometricWaves(1)		# 0 = Detailed list, 1 = list form
+	sineWaves( )
 	#lfoWaves( )
 	#printMIDI( )
 	#printOutErrors( )
