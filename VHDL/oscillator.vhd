@@ -7,7 +7,7 @@ entity oscillator is
     port( clk       : in STD_LOGIC;
           reset     : in STD_LOGIC;
           enable    : in STD_LOGIC;
-          wave      : in STD_LOGIC_VECTOR (2 downto 0);
+          waveForm  : in STD_LOGIC_VECTOR (2 downto 0);
           note      : in STD_LOGIC_VECTOR (7 downto 0);
           semi      : in STD_LOGIC_VECTOR (4 downto 0);
           dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
@@ -37,7 +37,6 @@ architecture arch_oscillator of oscillator is
           note      : in STD_LOGIC_VECTOR (7 downto 0);
           dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
           semi      : in STD_LOGIC_VECTOR (4 downto 0);
-          restart   : in STD_LOGIC;
           output    : out STD_LOGIC_VECTOR (11 downto 0));
     end component;
 
@@ -51,7 +50,7 @@ sineWave_comp: sineWave
     port map( clk, reset, enable, note, semi, out_sin, out_cos );
     
 geometry_comp: geometric
-    port map( clk, reset, enable, wave(1 to 0), note, dutyCycle, semi, out_geo);
+    port map( clk, reset, enable, waveForm(1 downto 0), note, dutyCycle, semi, out_geo);
 
 osc_process:
 process(reset, clk)
@@ -65,7 +64,7 @@ begin
     
         if enable = '1' then
         
-            case wave is
+            case waveForm is
                     
                 when "000" => -- Square
                      output <= out_geo;
