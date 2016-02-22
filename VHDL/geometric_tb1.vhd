@@ -33,7 +33,6 @@ ARCHITECTURE behavior OF geometric_tb1 IS
     signal note : std_logic_vector(7 downto 0) := (others => '0');
     signal dutyCycle : std_logic_vector(7 downto 0) := (others => '0');
     signal semi : std_logic_vector(4 downto 0) := (others => '0');
-    signal restart : std_logic := '0';
 
     --Outputs
     signal output : std_logic_vector(11 downto 0);
@@ -77,9 +76,9 @@ BEGIN
     
     enable <= '0';
     waveForm <= "00";
-    dutyCycle <= "01010010";
     note <= "10000011";
-    
+    dutyCycle <= "01010010";
+    semi <= "00000";
     
     wait for 100 ns;
     reset <= '1';
