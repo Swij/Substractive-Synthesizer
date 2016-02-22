@@ -61,13 +61,13 @@ PROCESS(clk, Reset)
 		WHEN Recieve =>								-- Accumulate 8 consecutive bits into one Byte
 			
 			Data_acc(Bit_counter) <= Data_in;
-			Bit_counter++
+--			Bit_counter++
 			
 			IF (Bit_counter = 7) THEN				-- Receive finished when Byte is full
 				
 				Uart_state <= Send;
 				
-			END IF
+			END IF;
 			
 		WHEN Send =>								-- Send the Accumulated byte to the MIDI Interface and revert to Idle state
 			
