@@ -12,7 +12,7 @@ end prescaler;
 
 architecture arch_prescaler of prescaler is
 
-signal clk : std_logic := '0';
+signal clkReg : std_logic := '0';
 
 begin
     
@@ -25,11 +25,10 @@ begin
 
         if cnt = (prescale-1) then
             cnt := 0;
-            preClk <= not(clk);
-            clk <= not(clk);
+            preClk <= not(clkReg);
+            clkReg <= not(clkReg);
         else
             cnt := cnt + 1;
-            preClk <= not(clk);
         end if;
         
     end if;

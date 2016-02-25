@@ -1,3 +1,11 @@
+
+set_property PACKAGE_PIN AF19 [get_ports FMC1_HPC_HA09_P]
+set_property IOSTANDARD LVCMOS25 [get_ports FMC1_HPC_HA09_P]
+set_property PACKAGE_PIN AF20 [get_ports FMC1_HPC_HA09_N]
+set_property IOSTANDARD LVCMOS25 [get_ports FMC1_HPC_HA09_N]
+
+
+
 set_property PACKAGE_PIN AB22 [get_ports No]
 set_property IOSTANDARD LVCMOS25 [get_ports No]
 set_property PACKAGE_PIN AE25 [get_ports FMC1_HPC_HA02_P]
@@ -28,10 +36,6 @@ set_property PACKAGE_PIN AD21 [get_ports FMC1_HPC_HA08_P]
 set_property IOSTANDARD LVCMOS25 [get_ports FMC1_HPC_HA08_P]
 set_property PACKAGE_PIN AE21 [get_ports FMC1_HPC_HA08_N]
 set_property IOSTANDARD LVCMOS25 [get_ports FMC1_HPC_HA08_N]
-set_property PACKAGE_PIN AF19 [get_ports FMC1_HPC_HA09_P]
-set_property IOSTANDARD LVCMOS25 [get_ports FMC1_HPC_HA09_P]
-set_property PACKAGE_PIN AF20 [get_ports FMC1_HPC_HA09_N]
-set_property IOSTANDARD LVCMOS25 [get_ports FMC1_HPC_HA09_N]
 set_property PACKAGE_PIN AE22 [get_ports FMC1_HPC_HA10_P]
 set_property IOSTANDARD LVCMOS25 [get_ports FMC1_HPC_HA10_P]
 set_property PACKAGE_PIN AF22 [get_ports FMC1_HPC_HA10_N]
