@@ -153,9 +153,9 @@ port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
 encoderTop_comp:component encoderTop
 port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
 
---prescale_comp:component prescaler
---    generic map ( prescale => 4000 )
---    port map ( clk, preClk );
+prescale_comp:component prescaler
+    generic map ( prescale => 4000 )
+    port map ( clk, preClk );
 
 IIR_comp:component IIR
 port map ( clk, filterIn, set, filterOut, finished );

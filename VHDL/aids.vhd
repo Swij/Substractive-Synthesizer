@@ -7,7 +7,7 @@ package aids is
     type WAVE is (SINE, COSINE, SQUARE, TRIANGLE, SAW1, SAW2, NOISE);
     
     -- STD_LOGIC_VECTOR to WAVE
-    function to_wave (input : std_logic_vector) return WAVE;
+    function to_wave (input : std_logic_vector(2 downto 0)) return WAVE;
     
     -- Table of angles 0 to 359 represented as 2^32*(i/360)
     type regAng is array (0 to 359) of std_logic_vector(31 downto 0);

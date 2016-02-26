@@ -76,14 +76,14 @@ architecture arch_top of top_sim is
     signal dir      : STD_LOGIC;
     signal btn      : STD_LOGIC;
 
-    --  Prescale component
---    component prescaler is
---        generic ( prescale : NATURAL := 4);
---        port ( clk    : IN STD_LOGIC;
---               preClk : OUT STD_LOGIC);
---    end component;
+    -- Prescale component
+    component prescaler is
+        generic ( prescale : NATURAL := 4);
+        port ( clk    : IN STD_LOGIC;
+               preClk : OUT STD_LOGIC);
+    end component;
 
- --   signal preClk : STD_LOGIC;
+    signal preClk : STD_LOGIC;
 
     -- IIR filter
     component IIR is
@@ -119,8 +119,8 @@ oscillator_comp:component oscillator
 encoderTop_comp:component encoderTop
 port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
 
---prescale_comp:component prescaler
---    port map ( clk, preClk );
+prescale_comp:component prescaler
+    port map ( clk, preClk );
 
 IIR_comp:component IIR
     port map ( clk, filterIn, set, filterOut, finished );
