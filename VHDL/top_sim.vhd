@@ -19,7 +19,6 @@ use UNISIM.VComponents.all;
 
 entity top_sim is
     port (  clk       : in STD_LOGIC;
-            fclk      : in STD_LOGIC;
             GPI0_SW_C : in STD_LOGIC;
             GPI0_SW_N : in STD_LOGIC;
             GPI0_SW_S : in STD_LOGIC;
@@ -62,15 +61,15 @@ architecture arch_top of top_sim is
     component encoderTop is
     port(
         clk         : in STD_LOGIC;
-        reset       : in STD_LOGIC;        
-        A       : in STD_LOGIC;        
-        B       : in STD_LOGIC;                
-        C      : in STD_LOGIC;        
+        reset       : in STD_LOGIC;
+        A       : in STD_LOGIC;
+        B       : in STD_LOGIC;
+        C      : in STD_LOGIC;
         change      : out STD_LOGIC;
         dir         : out STD_LOGIC;
         btn         : out STD_LOGIC);
     end component;
-    
+
 --    signal btnPin   : STD_LOGIC;
     signal change   : STD_LOGIC;
     signal dir      : STD_LOGIC;
@@ -150,15 +149,6 @@ begin
                 end if;
             end if;
         end if;
-    end if;
-end process;
-
-filter_clk:process(fclk)
-begin
-    if reset = '0' then
-        filterIn <= (others => '0');
-    elsif rising_edge(fclk) then
-        filterIn <= output(11 downto 0);
     end if;
 end process;
 
