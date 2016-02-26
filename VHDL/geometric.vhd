@@ -32,16 +32,17 @@ architecture arch_geometric of geometric is
     
     signal triangleState : STD_LOGIC;
     
-    signal T        : integer range 0 to 2**31 - 1;
-    signal F_s      : integer range 0 to 2**31 - 1;
-    signal F_s_clk  : integer range 0 to 2**31 - 1;
-    signal duty     : integer range 0 to 2**31 - 1;
+    signal T       : integer range 0 to 2**31 - 1;
+    signal F_s     : integer range 0 to 2**31 - 1;
+    signal F_s_clk : integer range 0 to 2**31 - 1;
+    signal duty    : integer range 0 to 2**31 - 1;
     
-    signal inc      : integer range 0 to 2**31 - 1;
-    signal sum      : integer range -2**(accSize) to (2**(accSize)-1);
+    signal inc     : integer range 0 to 2**31 - 1;
+    signal sum     : integer range -2**(accSize) to (2**(accSize)-1);
     
-    signal clkCnt   : integer range 0 to 2**31 - 1;
+    signal clkCnt  : integer range 0 to 2**31 - 1;
     signal noteReg : STD_LOGIC_VECTOR (7 downto 0);
+    signal waveReg : WAVE;
 
 begin
 
@@ -64,15 +65,18 @@ begin
         duty <= 0;
         
         noteReg <= (OTHERS => '0');
+        waveReg <= (OTHERS => '0');
         
     elsif rising_edge(clk) then
 
 -------------------------------------------------------------------------------
 --      RESTART
 -------------------------------------------------------------------------------
-        if noteReg /= note then
+        if noteReg /= note or waveReg /= wave then
         
-            noteReg <= note;        
+            noteReg <= note;
+            waveReg <= wave;
+             
             semit := to_integer(unsigned(semi));
         
             if semit = 0 then
