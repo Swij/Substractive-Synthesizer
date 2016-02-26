@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use work.aids.ALL;
 
 use work.geometryPackage.all;
 
@@ -14,7 +15,7 @@ entity geometric is
         reset       : in STD_LOGIC;
         enable      : in STD_LOGIC;
 
-        waveForm    : in STD_LOGIC_VECTOR (1 downto 0);
+        waveForm    : in WAVE;
         note        : in STD_LOGIC_VECTOR (7 downto 0);
         dutyCycle   : in STD_LOGIC_VECTOR (7 downto 0);
         semi        : in STD_LOGIC_VECTOR (4 downto 0);
@@ -80,7 +81,7 @@ begin
                 F_s_clk <= 0;
     
             --  Square
-                if waveForm = "00" then
+                if waveForm = SQUARE then
     
                     clkCnt <= 0;
                     sum <= 0;
@@ -92,7 +93,7 @@ begin
                     output <= squareWave;
     
             --  Triangle    
-                elsif waveForm = "01" then
+                elsif waveForm = TRIANGLE then
     
                     --  Phase shift the clock
                     clkCnt <= getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/32;
@@ -108,7 +109,7 @@ begin
                     --output <= triangleWave(accSize-1 downto accSize-dacWidth); -- 17 - 6
     
             --  Saw
-                elsif waveForm = "10" then
+                elsif waveForm = SAW1 then
                 
                     clkCnt <= 0;
                     sum <= -2**(accSize-1);
@@ -159,7 +160,7 @@ begin
 -------------------------------------------------------------------------------
 --          Triangle + Square
 -------------------------------------------------------------------------------
-            if waveForm = "00" or waveForm = "01" then
+            if waveForm = TRIANGLE or waveForm = SQUARE then
                 
                 ----------------------------------------------------------------
                 --  Set triangle state - down or up
@@ -207,7 +208,7 @@ begin
                 
                 triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,accSize));
                 
-                if waveForm = "00" then
+                if waveForm = SQUARE then
                 
                     output <= squareWave;
                     
@@ -220,7 +221,7 @@ begin
 -------------------------------------------------------------------------------
 --          Saw
 -------------------------------------------------------------------------------
-            elsif waveForm = "10" or waveForm = "11" then
+            elsif waveForm = SAW1 or waveForm = SAW2 then
             
                 --  Set triangle down or up
                 if clkCnt = T then
@@ -228,7 +229,7 @@ begin
                     F_s_clk <= 0;
                     clkCnt <= 0;
                     
-                    if waveForm = "10" then
+                    if waveForm = SAW1 then
                     
                         sum <= -2**(accSize-1);
                         
@@ -243,7 +244,7 @@ begin
                 
                     F_s_clk <= 0;
                     
-                    if waveForm = "10" then
+                    if waveForm = SAW1 then
                     
                         sum <= sum + inc;
                         

@@ -32,8 +32,6 @@ architecture arch_sine of sineWave is
    
 
     constant XIN    : integer := 19429;              -- 32000 / 1.647;
-    signal sine_out : std_logic_vector(16 downto 0);
-    signal cos_out  : std_logic_vector(16 downto 0);
     signal angle    : std_logic_vector(31 downto 0);
     signal noteReg  : std_logic_vector( 7 downto 0);
     
