@@ -129,7 +129,7 @@ begin
     if rising_edge(clk) then
         if reset = '0' then
             note <= "01000010"; -- note 66
-            dutyCycle <= "10000000";
+            dutyCycle <= "01000000";
             semi <= "00000";
         else
             if GPI0_SW_N = '1' then -- Semi up
