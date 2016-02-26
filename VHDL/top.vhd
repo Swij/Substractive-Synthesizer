@@ -123,7 +123,7 @@ begin
 --------------------------------------------------------------------------------
     -- GPIO coupling
     waveForm <= to_wave(GPIO_DIP_SW2 & GPIO_DIP_SW1 & GPIO_DIP_SW0);
-    reset <= not GPI0_SW_C;
+    reset <= not GPIO_SW_C;
     enable <=  GPIO_DIP_SW3;
     set <= not reset;
 
@@ -147,18 +147,18 @@ port map (
 
 --------------------------------------------------------------------------------
 
-  oscillator_comp:component oscillator
-    port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
+oscillator_comp:component oscillator
+port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
 
-  encoderTop_comp:component encoderTop
-    port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
+encoderTop_comp:component encoderTop
+port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
 
 --prescale_comp:component prescaler
 --    generic map ( prescale => 4000 )
 --    port map ( clk, preClk );
 
-  IIR_comp:component IIR
-    port map ( clk, filterIn, set, filterOut, finished );
+IIR_comp:component IIR
+port map ( clk, filterIn, set, filterOut, finished );
 
 --------------------------------------------------------------------------------
    
@@ -171,15 +171,15 @@ begin
           dutyCycle <= "10000000";
           semi <= "00000";
       else
-          if GPI0_SW_N = '1' then -- Semi up
+          if GPIO_SW_N = '1' then -- Semi up
 
-          elsif GPI0_SW_S = '1' then -- Semi down
+          elsif GPIO_SW_S = '1' then -- Semi down
 
-          elsif GPI0_SW_E = '1' then -- Tune up
+          elsif GPIO_SW_E = '1' then -- Tune up
               if unsigned(note) < 131 then
                   note <= std_logic_vector(unsigned(note)+1);
               end if;
-          elsif GPI0_SW_W = '1' then -- Tune down
+          elsif GPIO_SW_W = '1' then -- Tune down
               if unsigned(note) > 0 then
                   note <= std_logic_vector(unsigned(note)-1);
               end if;

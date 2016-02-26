@@ -28,7 +28,10 @@ entity top_sim is
             GPIO_DIP_SW0 : in STD_LOGIC;
             GPIO_DIP_SW1 : in STD_LOGIC;
             GPIO_DIP_SW2 : in STD_LOGIC;
-            GPIO_DIP_SW3 : in STD_LOGIC);
+            GPIO_DIP_SW3 : in STD_LOGIC;
+            ROTARY_INCA : in STD_LOGIC;
+            ROTARY_INCB : in STD_LOGIC;
+            ROTARY_PUSH : in STD_LOGIC);
 end top_sim;
 
 architecture arch_top of top_sim is
@@ -56,18 +59,19 @@ architecture arch_top of top_sim is
     signal output    : STD_LOGIC_VECTOR (11 downto 0);
 
     --  Encoder component
-    component encoder is
-    port ( clk      : in STD_LOGIC;
-           reset    : in STD_LOGIC;
-           grayPins : in STD_LOGIC_VECTOR (1 downto 0);
-           btnPin   : in STD_LOGIC;
-           change   : out STD_LOGIC;
-           dir      : out STD_LOGIC;
-           btn      : out STD_LOGIC);
+    component encoderTop is
+    port(
+        clk         : in STD_LOGIC;
+        reset       : in STD_LOGIC;        
+        A       : in STD_LOGIC;        
+        B       : in STD_LOGIC;                
+        C      : in STD_LOGIC;        
+        change      : out STD_LOGIC;
+        dir         : out STD_LOGIC;
+        btn         : out STD_LOGIC);
     end component;
-
-    signal grayPins : STD_LOGIC_VECTOR (1 downto 0);
-    signal btnPin   : STD_LOGIC;
+    
+--    signal btnPin   : STD_LOGIC;
     signal change   : STD_LOGIC;
     signal dir      : STD_LOGIC;
     signal btn      : STD_LOGIC;
@@ -112,8 +116,8 @@ begin
 oscillator_comp:component oscillator
     port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
 
-encoder_comp:component encoder
-    port map( clk, reset, grayPins, btnPin, change, dir, btn );
+encoderTop_comp:component encoderTop
+port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
 
 --prescale_comp:component prescaler
 --    port map ( clk, preClk );

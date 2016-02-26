@@ -375,7 +375,7 @@ package aids is
 end aids;
 
 package body aids is
-    function to_wave (input : std_logic_vector) return WAVE is
+    function to_wave (input : std_logic_vector(2 downto 0)) return WAVE is
         variable output : WAVE;
     begin
         case input is
