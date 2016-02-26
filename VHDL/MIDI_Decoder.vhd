@@ -16,9 +16,9 @@ ENTITY MIDI_Decoder IS
 		Reset		: in STD_LOGIC;
 		Clock		: in STD_LOGIC;
 		
-		Data_out			: out STD_LOGIC_VECTOR(15 DOWNTO 0)
-		
-		--Note_on			: out STD_LOGIC;
+		Data_out		: out STD_LOGIC_VECTOR(15 DOWNTO 0);
+		Data_send		: out STD_LOGIC;
+		Note_on			: out STD_LOGIC
 		--Note_off			: out STD_LOGIC;
 		--Command_reciever 	: out STD_LOGIC_VECTOR(7 DOWNTO 0);
 		--Command_out			: out STD_LOGIC_VECTOR(7 DOWNTO 0);
@@ -46,9 +46,10 @@ BEGIN
 		--Command_acc <= (OTHERS => '0');
 		Data_out <= (OTHERS => '0');
 		--Command_out <= (OTHERS => '0');
-		--Note_state <= '0';
+		Note_state <= '0';
+		Note_on <= '1';
 		MIDI_Decoder_state <= Idle;
-		
+		Data_send <= '0';
 		
 	ELSIF (RISING_EDGE(Clock)) THEN
 	
@@ -59,6 +60,8 @@ BEGIN
 			Data_acc <= (OTHERS => '0');
 			Data_out <= (OTHERS => '0');
 			Byte_cnt <= 0;
+			Note_state <= '0';
+			Data_send <= '0';
 			
 			IF (Data_ready = '1') THEN
 			
@@ -68,12 +71,12 @@ BEGIN
 					
 					Byte_cnt <= 2;
 					MIDI_Decoder_State <= Recieve;
-					--Note_state <= '0';
+					Note_state <= '0';
 	
 				WHEN "1001" =>
  	
 					Byte_cnt <= 2;
-					--Note_state <= '1';
+					Note_state <= '1';
 					MIDI_Decoder_State <= Recieve;
 				
 				--WHEN "1101" =>
@@ -109,7 +112,8 @@ BEGIN
 		WHEN Send =>
 			
 			Data_out <= Data_acc;
-			--Note_on <= Note_state;
+			Note_on <= Note_state;
+			Data_send <= '1';
 			--Note_off <= NOT(Note_state);
 			
 		END CASE;

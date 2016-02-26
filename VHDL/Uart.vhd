@@ -61,7 +61,7 @@ PROCESS(clk, Reset)
 		WHEN Recieve =>								-- Accumulate 8 consecutive bits into one Byte
 			
 			Data_acc(Bit_counter) <= Data_in;
---			Bit_counter++
+			Bit_counter <= Bit_counter + 1;
 			
 			IF (Bit_counter = 7) THEN				-- Receive finished when Byte is full
 				
