@@ -21,7 +21,6 @@ architecture Behavioral of top_tb is
     -- Component Declaration for the Unit Under Test (UUT)
     component top_sim is
         port (  clk       : in STD_LOGIC; 
-                fclk      : in STD_LOGIC;
                 GPI0_SW_C : in STD_LOGIC;
                 GPI0_SW_N : in STD_LOGIC;
                 GPI0_SW_S : in STD_LOGIC;
@@ -38,7 +37,6 @@ architecture Behavioral of top_tb is
     
     -- Inputs
     signal clk : STD_LOGIC := '0';
-    signal fclk : STD_LOGIC := '0';
     signal reset : STD_LOGIC := '0';
     signal GPI0_SW_C : STD_LOGIC := '0';
     signal GPI0_SW_N : STD_LOGIC := '0';
@@ -55,14 +53,12 @@ architecture Behavioral of top_tb is
     
     -- Clock period definitions
     constant clk_period : time := 5 ns; -- 200MHz
-    constant fclk_period : time := 25 us; -- 40KHz
 
 begin
 
 -- Instantiate the Unit Under Test (UUT)
 uut: top_sim PORT MAP (
         clk,
-        fclk,
         GPI0_SW_C,
         GPI0_SW_N,
         GPI0_SW_S,
@@ -83,15 +79,6 @@ begin
     wait for clk_period/2;
     clk <= '1';
     wait for clk_period/2;
-end process;
-
--- Clock process definitions
-fclk_process :process
-begin
-    fclk <= '0';
-    wait for fclk_period/2;
-    fclk <= '1';
-    wait for fclk_period/2;
 end process;
 
 -- Stimulus process
