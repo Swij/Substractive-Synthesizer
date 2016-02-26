@@ -41,6 +41,24 @@ def hex2bytes(h):
 
 	return h.decode('hex')
 
+def binbin(bina):
+
+	i = 7
+	conv = bina
+	strBin = ""
+	while i >= 0:
+
+		j = 2**i
+		if (conv - j) >= 0:
+			strBin += "1"
+			conv -= j
+		else:
+			strBin += "0"
+
+		i -= 1
+
+	return strBin
+
 i = 0
 
 try:
@@ -49,7 +67,7 @@ try:
 		a = (struct.unpack('B', ser.read(1))[0])
 		if a != 252:
 
-			print ("%i:\t%s = %i"%(i,hex(a),a))
+			print ("%i:\t%s = %s = %i"%(i,hex(a),binbin(a),a))
 			i+=1;
 
 			if i % 4 == 0:
