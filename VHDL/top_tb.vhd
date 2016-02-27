@@ -84,51 +84,51 @@ end process;
 -- Stimulus process
 stim_proc: process
 begin 
-    GPI0_SW_C <= '1';
-    wait for 10 ns;
-    GPI0_SW_C <= '0';
     GPIO_DIP_SW3 <= '1';
-        
-    GPI0_SW_E <= '1';
-    wait for clk_period*30;
-    GPI0_SW_E <= '0';    
-    
-    GPIO_DIP_SW2 <= '0';
-    GPIO_DIP_SW1 <= '0';
-    GPIO_DIP_SW0 <= '0';
-    wait for 1000 us;
-    GPIO_DIP_SW2 <= '0';
-    GPIO_DIP_SW1 <= '0';
-    GPIO_DIP_SW0 <= '1';
-    wait for 1000 us;
-    
     GPI0_SW_C <= '1';
-    wait for 10 ns;
+    wait for 200 ns;
     GPI0_SW_C <= '0';
-
-    GPI0_SW_E <= '1';
-    wait for clk_period*30;
-    GPI0_SW_E <= '0';    
     
+    -- SQUARE
     GPIO_DIP_SW2 <= '0';
     GPIO_DIP_SW1 <= '1';
     GPIO_DIP_SW0 <= '0';
     wait for 1000 us;
+       
+    -- TRIANGLE
     GPIO_DIP_SW2 <= '0';
     GPIO_DIP_SW1 <= '1';
     GPIO_DIP_SW0 <= '1';
     wait for 1000 us;
+    
+    -- SAW1
     GPIO_DIP_SW2 <= '1';
     GPIO_DIP_SW1 <= '0';
     GPIO_DIP_SW0 <= '0';
     wait for 1000 us;
+        
+    -- SAW2
     GPIO_DIP_SW2 <= '1';
     GPIO_DIP_SW1 <= '0';
     GPIO_DIP_SW0 <= '1';
     wait for 1000 us;
-    GPIO_DIP_SW2 <= '1';
-    GPIO_DIP_SW1 <= '1';
+    
+--    -- NOISE
+--    GPIO_DIP_SW2 <= '1';
+--    GPIO_DIP_SW1 <= '1';
+--    GPIO_DIP_SW0 <= '0';
+--    wait for 1000 us;
+    
+    -- SINE
+    GPIO_DIP_SW2 <= '0';
+    GPIO_DIP_SW1 <= '0';
     GPIO_DIP_SW0 <= '0';
+    wait for 1000 us;
+    
+    -- COSINE
+    GPIO_DIP_SW2 <= '0';
+    GPIO_DIP_SW1 <= '0';
+    GPIO_DIP_SW0 <= '1';
     wait for 1000 us;
     
     assert false report "End of simulation" severity FAILURE;

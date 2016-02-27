@@ -77,7 +77,7 @@ architecture arch_top of top_sim is
 
     -- Prescale component
     component prescaler is
-        generic ( prescale : NATURAL := 4);
+        generic ( prescale : NATURAL := 1000);
         port ( clk    : IN STD_LOGIC;
                preClk : OUT STD_LOGIC);
     end component;
@@ -89,15 +89,14 @@ architecture arch_top of top_sim is
         generic ( WIDTH : INTEGER:=12);
         port ( clk      : STD_LOGIC;
                x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-               set      : in STD_LOGIC;
+               reset    : in STD_LOGIC;
                y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
                finished : out STD_LOGIC);
     end component;
 
-    signal set : STD_LOGIC;
     signal finished : STD_LOGIC;
     signal filterOut : STD_LOGIC_VECTOR(11 downto 0);
-    signal filterIn  : STD_LOGIC_VECTOR(11 downto 0);
+    signal filterIn  : STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
 
     --  Next below here...
     --  ...
@@ -108,7 +107,7 @@ begin
     waveForm <= to_wave(GPIO_DIP_SW2 & GPIO_DIP_SW1 & GPIO_DIP_SW0);
     reset <= not GPI0_SW_C;
     enable <=  GPIO_DIP_SW3;
-    set <= not reset;
+    filterIn <= output;
 
 --------------------------------------------------------------------------------
 
@@ -116,13 +115,14 @@ oscillator_comp:component oscillator
     port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
 
 encoderTop_comp:component encoderTop
-port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
+    port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
 
 prescale_comp:component prescaler
+    generic map ( prescale => 1000 )
     port map ( clk, preClk );
 
 IIR_comp:component IIR
-    port map ( clk, filterIn, set, filterOut, finished );
+    port map ( preClk, filterIn, reset, filterOut, finished );
 
 --------------------------------------------------------------------------------
 
@@ -131,8 +131,8 @@ process(clk)
 begin
     if rising_edge(clk) then
         if reset = '0' then
-            note <= "01000010"; -- note 66
-            dutyCycle <= "01000000";
+            note <= std_logic_vector(to_unsigned(91, 8));
+            dutyCycle <= std_logic_vector(to_unsigned(50, 8));
             semi <= "00000";
         else
             if GPI0_SW_N = '1' then -- Semi up

@@ -101,12 +101,11 @@ architecture arch_top of top is
         generic ( WIDTH : INTEGER:=12);
         port ( clk      : STD_LOGIC;
                x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-               set      : in STD_LOGIC;
+               reset    : in STD_LOGIC;
                y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
                finished : out STD_LOGIC);
     end component;
 
-    signal set : STD_LOGIC;
     signal finished : STD_LOGIC;
     signal filterOut : STD_LOGIC_VECTOR(11 downto 0);
     signal filterIn  : STD_LOGIC_VECTOR(11 downto 0);
@@ -125,7 +124,7 @@ begin
     waveForm <= to_wave(GPIO_DIP_SW2 & GPIO_DIP_SW1 & GPIO_DIP_SW0);
     reset <= not GPIO_SW_C;
     enable <=  GPIO_DIP_SW3;
-    set <= not reset;
+    filterIn <= output;
 
     GPIO_LED_0 <= gpioLEDS(0);
     GPIO_LED_1 <= gpioLEDS(1);
@@ -148,17 +147,17 @@ port map (
 --------------------------------------------------------------------------------
 
 oscillator_comp:component oscillator
-port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
+    port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
 
 encoderTop_comp:component encoderTop
-port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
+    port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
 
 prescale_comp:component prescaler
     generic map ( prescale => 4000 )
     port map ( clk, preClk );
 
 IIR_comp:component IIR
-port map ( clk, filterIn, set, filterOut, finished );
+    port map ( preClk, filterIn, reset, filterOut, finished );
 
 --------------------------------------------------------------------------------
    

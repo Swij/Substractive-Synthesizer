@@ -65,17 +65,17 @@ begin
         duty <= 0;
         
         noteReg <= (OTHERS => '0');
-        waveReg <= (OTHERS => '0');
+        waveReg <= TRIANGLE;
         
     elsif rising_edge(clk) then
 
 -------------------------------------------------------------------------------
 --      RESTART
 -------------------------------------------------------------------------------
-        if noteReg /= note or waveReg /= wave then
+        if noteReg /= note or waveReg /= waveForm then
         
             noteReg <= note;
-            waveReg <= wave;
+            waveReg <= waveForm;
              
             semit := to_integer(unsigned(semi));
         
