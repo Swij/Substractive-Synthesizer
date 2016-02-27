@@ -3,6 +3,7 @@ USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
 USE work.geometryPackage.ALL;
+USE work.aids.ALL;
  
 ENTITY geometric_tb1 IS
 END geometric_tb1;
@@ -16,7 +17,7 @@ ARCHITECTURE behavior OF geometric_tb1 IS
         clk : IN  std_logic;
         reset : IN  std_logic;
         enable : IN  std_logic;
-        waveForm : IN  std_logic_vector(1 downto 0);
+        waveForm : IN  WAVE;
         note : IN  std_logic_vector(7 downto 0);
         dutyCycle : IN  std_logic_vector(7 downto 0);
         semi        : in STD_LOGIC_VECTOR (4 downto 0);
@@ -29,7 +30,7 @@ ARCHITECTURE behavior OF geometric_tb1 IS
     signal clk : std_logic := '0';
     signal reset : std_logic := '0';
     signal enable : std_logic := '0';
-    signal waveForm : std_logic_vector(1 downto 0) := (others => '0');
+    signal waveForm : WAVE;
     signal note : std_logic_vector(7 downto 0) := (others => '0');
     signal dutyCycle : std_logic_vector(7 downto 0) := (others => '0');
     signal semi : std_logic_vector(4 downto 0) := (others => '0');
