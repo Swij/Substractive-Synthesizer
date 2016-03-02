@@ -67,16 +67,48 @@ process
 begin
 
     reset <= '0';
-    data <= "1010101001010101";
+    data <= "1010101010101010";
     start <= '0';
     
     wait for 10 ns;
 
     reset <= '1';
-    start <= '1';
     
-    wait for clk_period*32*50;
-
+    wait for 20 ns;
+    
+        start <= '1';
+        
+        wait for clk_period;
+        
+        start <= '0';
+            
+        wait for 4000 ns;
+            
+            start <= '1';
+            
+            wait for clk_period;
+            
+            start <= '0';
+                
+            wait for 4000 ns;
+                
+                start <= '1';
+                
+                wait for clk_period;
+                
+                start <= '0';
+                    
+                wait for 4000 ns;
+                    
+                    start <= '1';
+                    
+                    wait for clk_period;
+                    
+                    start <= '0';
+                        
+                    wait for 4000 ns;
+    
+    
     assert false report "End of simulation" severity FAILURE;
 
 end process;

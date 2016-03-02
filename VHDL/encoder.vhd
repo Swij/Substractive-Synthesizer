@@ -108,6 +108,7 @@ begin
                 else
                     next_state <= L3;
                 end if;
+                change <= '0';
             when LEFT =>
                 dir <= '0';
                 change <= '1';
