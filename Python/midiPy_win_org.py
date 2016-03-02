@@ -9,7 +9,6 @@ import binascii
 ser = serial.Serial('COM3',baudrate=31250)
 ser.flushOutput()
 ser.flushInput()
-state = 0
 
 def bytes2int(str):
 	return int(str.encode('hex'), 16)
@@ -64,29 +63,15 @@ i = 0
 
 try:
 	while True:
+
 		a = (struct.unpack('B', ser.read(1))[0])
-		if a != 254 and a != 255:
-			if a == 32 and state == 0: 
-				print ("Note On")
-				state = 1
-			
-			elif state == 1 and a != 32:	
-				#print ("%i:\t%s = %s = %i"%(i,hex(a),binbin(a),a))
-				
-				print ("Note is: " + str(a))
-				#i+=1;
-				state = 2
-			elif state == 2 and a == 0:
-				print ("Note off")
-				state = 0;
-			
-			elif state == 2: 
-				print ("Velocity is: " + str(a))
-				state = 1;
-				#if i % 4 == 0:
-					#print("\n")
-		
-		
+		if a != 254:
+
+			print ("%i:\t%s = %s = %i"%(i,hex(a),binbin(a),a))
+			i+=1;
+
+			if i % 4 == 0:
+				print("\n")
 
 except KeyboardInterrupt:
     pass
