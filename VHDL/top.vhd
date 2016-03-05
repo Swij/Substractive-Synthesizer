@@ -54,42 +54,42 @@ architecture arch_top of top is
     signal IB : STD_LOGIC;
 
     --  Oscillator component and signals
---    component oscillator is
---    port ( clk       : in STD_LOGIC;
---           reset     : in STD_LOGIC;
---           enable    : in STD_LOGIC;
---           waveForm  : in WAVE;
---           note      : in STD_LOGIC_VECTOR (7 downto 0);
---           semi      : in STD_LOGIC_VECTOR (4 downto 0);
---           dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
---           output    : out STD_LOGIC_VECTOR (11 downto 0));
---    end component;
+    component oscillator is
+    port ( clk       : in STD_LOGIC;
+           reset     : in STD_LOGIC;
+           enable    : in STD_LOGIC;
+           waveForm  : in WAVE;
+           note      : in STD_LOGIC_VECTOR (7 downto 0);
+           semi      : in STD_LOGIC_VECTOR (4 downto 0);
+           dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
+           output    : out STD_LOGIC_VECTOR (11 downto 0));
+    end component;
 
     signal reset     : STD_LOGIC;
---    signal enable    : STD_LOGIC;
---    signal waveForm  : WAVE;
---    signal note      : STD_LOGIC_VECTOR (7 downto 0);
---    signal semi      : STD_LOGIC_VECTOR (4 downto 0);
---    signal dutyCycle : STD_LOGIC_VECTOR (7 downto 0);
---    signal output    : STD_LOGIC_VECTOR (11 downto 0);
+    signal enable    : STD_LOGIC;
+    signal waveForm  : WAVE;
+    signal note      : STD_LOGIC_VECTOR (7 downto 0);
+    signal semi      : STD_LOGIC_VECTOR (4 downto 0);
+    signal dutyCycle : STD_LOGIC_VECTOR (7 downto 0);
+    signal output    : STD_LOGIC_VECTOR (11 downto 0);
 
     --  Encoder component
---    component encoderTop is
---    port(
---        clk         : in STD_LOGIC;
---        reset       : in STD_LOGIC;        
---        A       : in STD_LOGIC;        
---        B       : in STD_LOGIC;                
---        C      : in STD_LOGIC;        
---        change      : out STD_LOGIC;
---        dir         : out STD_LOGIC;
---        btn         : out STD_LOGIC);
---    end component;
+    component encoderTop is
+    port(
+        clk    : in STD_LOGIC;
+        reset  : in STD_LOGIC;        
+        A      : in STD_LOGIC;        
+        B      : in STD_LOGIC;                
+        C      : in STD_LOGIC;        
+        change : out STD_LOGIC;
+        dir    : out STD_LOGIC;
+        btn    : out STD_LOGIC);
+    end component;
     
 --    --signal btnPin   : STD_LOGIC;
---    signal change   : STD_LOGIC;
---    signal dir      : STD_LOGIC;
---    signal btn      : STD_LOGIC;
+    signal change : STD_LOGIC;
+    signal dir    : STD_LOGIC;
+    signal btn    : STD_LOGIC;
 
     --  Prescale component
 --    component prescaler is
@@ -161,11 +161,11 @@ port map (
 
 --------------------------------------------------------------------------------
 
---oscillator_comp:component oscillator
---    port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
+oscillator_comp:component oscillator
+    port map( clk, reset, enable, waveForm, note, semi, dutyCycle, output );
 
---encoderTop_comp:component encoderTop
---    port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
+encoderTop_comp:component encoderTop
+    port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
 
 --prescale_comp:component prescaler
 --    generic map ( prescale => 4000 )
@@ -193,8 +193,7 @@ DAC_comp:component AD5065_DAC
     GPIO_LED_3 <= gpioLEDS(3);
 
 --    note <= "01000010"; -- note 66
---    dutyCycle <= "01000000";
---    semi <= "00000";
+
     
     
 top_process:
@@ -203,65 +202,67 @@ begin
 
     if rising_edge(clk) then
     
-        --  CHANGING NOTE
-        if GPIO_SW_C = '1' then     --tryck ner, blir hög
+    --  CHANGING NOTE
+        if GPIO_SW_N = '1' then     --tryck ner, blir hög
         
-            reset <= '0';
-
-            if DACready = '1' then
-                gpioLEDS(0) <= '1';
-                gpioLEDS(1) <= '0';
-               -- DACstart <= '1';
-            else
-                gpioLEDS(0) <= '0';
-                gpioLEDS(1) <= '1';
-               -- DACstart <= '0';
-            end if;
-            
+            reset <= '0';            
+            gpioLEDS(0) <= '0';
+            gpioLEDS(1) <= '0';
+            gpioLEDS(2) <= '1';
+            gpioLEDS(3) <= '1';
             
         else
         
-            --gpioLEDS(0) <= '1';
             reset <= '1';
             
-                        
+         
+       --  NOTE CHANGE WITH THE ENCODER
+            if change = '1' then
+                if dir = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                    gpioLEDS(1) <= not(gpioLEDS(1));                    
+                    if unsigned(note) < 95 then
+                        note <= std_logic_vector(unsigned(note) + 1);
+                    end if;
+                else
+                    gpioLEDS(2) <= not(gpioLEDS(2));
+                    gpioLEDS(3) <= not(gpioLEDS(3));                    
+                    if unsigned(note) > 0 then
+                        note <= std_logic_vector(unsigned(note) - 1);
+                    end if;
+                end if;
+            end if;              
+        
+            
+            
+        --  DAC               
             if DACready = '1' then
-                gpioLEDS(0) <= '0';
-                gpioLEDS(1) <= '1';
-               -- DACstart <= '1';
+--                DACdata(15) <= GPIO_DIP_SW3;
+--                DACdata(14) <= GPIO_DIP_SW2;
+--                DACdata(13) <= GPIO_DIP_SW1;
+--                DACdata(12) <= GPIO_DIP_SW0;
+                DACdata(15 downto 12) <= (OTHERS => '0');
+--                DACdata(11 downto 0) <= (OTHERS => '1');
+                DACdata(11 downto 0) <= std_logic_vector(signed(output) + 2048);
+                DACstart <= '1';
             else
-                gpioLEDS(0) <= '1';
-                gpioLEDS(1) <= '0';
-               -- DACstart <= '0';
+                DACstart <= '0';
             end if;
-                           
-                    --if GPIO_SW_N = '1' then
-        
-            DACdata(15) <= GPIO_DIP_SW3;
-            DACdata(14) <= GPIO_DIP_SW2;
-            DACdata(13) <= GPIO_DIP_SW1;
-            DACdata(12) <= GPIO_DIP_SW0;
             
-            DACdata(11 downto 0) <= (OTHERS => '1');
+        --  Select Wave
+            waveForm <= to_wave(GPIO_DIP_SW2 & GPIO_DIP_SW1 & GPIO_DIP_SW0);
+            dutyCycle <= "00110010";
+            semi <= "00000";
+            enable <= '1';
             
-            DACstart <= '1';
-                        
-                    --end if;
-                    
-                --    gpioLEDS(1) <= '1';
-                    
-                --else
-                
-                --    DACstart <= '1';
-                --    gpioLEDS(1) <= '0';
-                    
-                --end if;
-            
-        end if;
-        
---        gpioLEDS(2) <= GPIO_DIP_SW1;
---        gpioLEDS(3) <= GPIO_DIP_SW0;
-        
+        end if;  
+         
+
+    end if;
+    
+end process;    
+end arch_top;
+
 --            if GPIO_SW_N = '1' then -- Semi up
             
 --            elsif GPIO_SW_S = '1' then -- Semi down
@@ -276,22 +277,3 @@ begin
 --                end if;
 --            end if;
 --        end if;
-        
-            --  ENCODER
---            if change = '1' then
---                if dir = '1' then
---                    gpioLEDS(0) <= not(gpioLEDS(0));
---                    gpioLEDS(1) <= not(gpioLEDS(1));
---                else
---                    gpioLEDS(2) <= not(gpioLEDS(2));
---                    gpioLEDS(3) <= not(gpioLEDS(3));
---                end if;
---                DACstart <= '1';
---            else
---                DACstart <= '0';
---            end if;
-
-    end if;
-    
-end process;    
-end arch_top;

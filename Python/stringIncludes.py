@@ -29,3 +29,27 @@ PACKAGE BODY geometricWaves IS
     
 END geometricWaves;
 """
+
+geoMetricHead = """
+\\begin{longtable}{|c|c|c|c|c|c|c|c|}
+\\caption{A simple longtable assome.\\label{long}}\\\\\\
+\\hline
+\\textbf{Tone} & \\textbf{f(original)} & \\textbf{f(mod1)} & \\textbf{f(mod2)} & \\textbf{f(mod4)} & \\textbf{Error 1} & \\textbf{Error 2} & \\textbf{Error 4}\\\\
+\\hline
+\\endfirsthead
+\\multicolumn{8}{c}%
+{\\tablename\\ \\thetable\ -- \\textit{Continued from previous page}} \\\\
+\\hline
+\\textbf{Tone} & \\textbf{f(original)} & \\textbf{f(mod1)} & \\textbf{f(mod2)} & \\textbf{f(mod4)} & \\textbf{Error 1} & \\textbf{Error 2} & \\textbf{Error 4}\\\\
+\\hline
+\\endhead
+\\hline \\multicolumn{8}{r}{\\textit{Continued on next page}} \\\\
+\\endfoot
+\\hline
+\\endlastfoot
+""" 
+
+geoMetricTail = """ 
+\end{longtable}
+
+"""

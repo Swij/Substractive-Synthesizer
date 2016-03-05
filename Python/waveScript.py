@@ -1,11 +1,12 @@
 import math
 import stringIncludes as strings
+from wrapPlot import *
 
 min_ = -57						# -57 == C0
-max_ = 74 #- 12*3				#  74 == B10 ; 74 - 12*3 == B7
+max_ = 38 #- 12*3				#  74 == B10 ; 74 - 12*3 == B7
 ref = 440.0 					# The reference is A4
 
-nrOfIncBits = 18  				# Larger span gives better resolution
+nrOfIncBits = 12  				# Larger span gives better resolution
 								# 	although 10 bits will be truncated
 								#	for a 12 bit resolution
 
@@ -13,7 +14,9 @@ clk = 200000000.0 				# Hz of the FPGA
 Ts = 1.0 / clk 					# Period of that clk
 
 notes = ["C", "C♯/D♭", "D", "E♭/D♯", "E", "F", "F♯/G♭", "G", "A♭/G♯", "A", "B♭/A♯", "B"]
+notesL = ["C", "C\\#", "D", "D\\#", "E", "F", "F\\#", "G", "G\\#", "A", "A\\#", "B"]
 allNames = []
+allNamesL = []
 
 allFrequenciesFloat = []		# All frequencies in float format
 
@@ -21,7 +24,6 @@ allPeriodsFloat = []			# All periods (nr of clk cycles) as floats
 allPeriodsInt = []				# ... then rounded of
 allPeriodsIntMod2 = []			# ... both to even
 allPeriodsIntMod4 = []			# ... and "even-even"
-
 allSampleFreqFloat = []			# The sampling frequencies of them all
 allSampleFreqInt = []			# Also has a period as an integer
 
@@ -34,6 +36,8 @@ octCnt = 0
 for n in range(min_,max_+1):
 	
 	allNames.append(notes[nameCnt] + str(octCnt))
+	allNamesL.append(notesL[nameCnt] + str(octCnt))
+
 	
 	nameCnt += 1
 	if nameCnt == 12:
@@ -46,6 +50,7 @@ for n in range(min_,max_+1):
 ##  Calculate all frequencies in octave 0 to 10
 ##	  and calculate the integer period
 ##	  and round to closest mod2==0 integer, required for "perfect" square
+##	  and round to closest mod4==0 integer
 ##	  and sampling frequency in integers
 ################################################################################
 for n in range(min_,max_+1):
@@ -85,7 +90,7 @@ for n in range(min_,max_+1):
 			allPeriodsIntMod4.append(roundedClks + modFour)
 
 	# Sampling frequency period in int
-	samFactor = 32.0							# How fast the sampling is done
+	samFactor = 177.0							# How fast the sampling is done
 	samFreq = frequency * (samFactor)				# The sampling frequency..
 	samT = 1.0 / samFreq 						# 	and its period
 	nrOfClks = samT / Ts 						# How many clocks is in that period
@@ -121,11 +126,6 @@ def geometricWaves(detail):
 
 	print("Notes: %i, Octaves = %i"%(len(allPeriodsIntMod2),len(allPeriodsIntMod2)/12))
 
-	increment = []							# List of increments at every sampling point
-	triAmp = 2**(nrOfIncBits)				# Amplitude with extra bits
-	sampPoints = 32.0
-	increase = int(triAmp/(sampPoints-1))
-	incRest = triAmp % increase
 
 	for i in range(len(allPeriodsIntMod2)):
 		
@@ -143,10 +143,8 @@ def geometricWaves(detail):
 
 	if detail == 1:
 
-		print(len(allPeriodsIntMod4))
-		print("All the notes periods in integers where mod4 == 0\n")
-		print(allPeriodsIntMod4)
-		print(len(allPeriodsIntMod4))
+		print("All the notes(%i) periods in integers where mod2 == 0\n"%(len(allPeriodsIntMod2)))
+		print(allPeriodsIntMod2)
 
 		print("\n\nAll the periods for their respective sampling frequencies\n")
 		print(allSampleFreqInt)
@@ -154,10 +152,20 @@ def geometricWaves(detail):
 		print("\n\nThe incrementation at every sampling point\n")
 		#print(increase)
 
-	increase2 = (2**(nrOfIncBits-1)-1)/8
-	increase2mod = 2**(nrOfIncBits-1)%8
-	print("Triangle increase = %i, rest of = %i"%(increase2,increase2mod))
-	print("Saw increase = %i, rest of = %i"%(increase,incRest))
+    # Triangle increment
+	triAmp = 2**(12)-2				# Amplitude with extra bits
+	sampPoints = 178.0
+
+	incTriang = triAmp/(sampPoints/2)
+	incTriangmod = triAmp%(sampPoints/2)
+	print("Triangle increase = %i, rest of = %i"%(incTriang,incTriangmod))
+
+
+	# Saw increment
+	sawcrease = triAmp/sampPoints
+	sawrest = triAmp % sampPoints
+
+	print("Saw increase = %i, rest of = %i"%(sawcrease,sawrest))
 
 
 	totalSim = 0
@@ -167,6 +175,9 @@ def geometricWaves(detail):
 	print("Total clocks in the simulation = %i = %ss"%(totalSim,ns))
 	print(Ts)
 
+################################################################################
+##  Find out sine stuff
+################################################################################
 def sineWaves( ):
 
 	sinePeriods = []
@@ -178,9 +189,101 @@ def sineWaves( ):
 	print("Sine angle delay in clks:")
 	print(sinePeriods)
 		
+################################################################################
+##  Geometric LaTeX
+################################################################################
+def geoLatex( ):
+
+	latex = ""
+
+	for i in range(len(allPeriodsIntMod2)):
+
+		f0 = allFrequenciesFloat[i]
+		f1 = 1.0/(allPeriodsInt[i] * Ts)
+		f2 = 1.0/(allPeriodsIntMod2[i] * Ts)
+		f4 = 1.0/(allPeriodsIntMod4[i] * Ts)
+
+		latex += ("  " + allNamesL[i] + " & ")
+
+		latex += ("{:10.5f}".format(f0) + " & ")
+		latex += ("{:10.5f}".format(f1) + " & ")
+		latex += ("{:10.5f}".format(f2) + " & ")
+		latex += ("{:10.5f}".format(f4) + " & ")
+		latex += ("{:10.6f}".format(abs((f1-f0)/f0)) + " & ")
+		latex += ("{:10.6f}".format(abs((f2-f0)/f0)) + " & ")
+		latex += ("{:10.6f}".format(abs((f4-f0)/f0)))
+
+		latex += "\\\\"
+		latex += "\n"
+
+	print(strings.geoMetricHead  + latex)
+
+################################################################################
+##  Sampling LaTeX
+################################################################################
+def sampLatex( ):
+
+	samplex = ""
+	x = []
+	y = []
+	high = []
+	totalModulo = 0.0
+
+	for i in range(16,2049): # For all sampling periods
+
+		for j in range(len(allPeriodsInt)): # For all tones
+		
+			T_samp = (1.0 / (allFrequenciesFloat[j] * i)) / Ts
+			#nrOfClks = (1.0 / (16.3516 * 32))/(1.0/200000000.0)
+			Trounded = int(round(T_samp))
+
+			totalModulo += allPeriodsInt[j] % T_samp
+
+		x.append(i)
+		y.append(totalModulo)
+		totalModulo = 0
 
 
+		
+		# samplex += ("T = " + str(allPeriodsIntMod4[i]) + 
+		# 	", T_f = T / div 32 = " + str(round(allPeriodsIntMod4[i] / 32)) + 
+		# 	", rest = " + str(allPeriodsIntMod4[i] % allSampleFreqInt[i]) + "\n")
 
+	#barchart(x,y,(128-16))
+	print(x)	
+	print(y)
+
+################################################################################
+##  Sampling LaTeX
+################################################################################
+def latexSamplePeriods( ):
+
+	samFactors = [16,32,64,128,256,512,178]	
+	latex = "Note"
+
+	for b in range(len(samFactors)):
+		latex += (" & " + str(samFactors[b])) 
+
+	latex += "\\\\"
+	latex += "\n"
+
+
+	for i in range(len(allFrequenciesFloat)):
+		
+		latex += (allNamesL[i])
+
+		for j in range(len(samFactors)):
+
+			samFreq = allFrequenciesFloat[i] * samFactors[j]			
+			samT = 1.0 / samFreq
+			nrOfClks = int(round(samT / Ts))
+
+			latex += (" & " + str(nrOfClks))
+		
+		latex += "\\\\\n"
+
+	print(latex)
+#def musicLatex( ):
 ################################################################################
 ##  LFO - Here we go!
 ################################################################################
@@ -291,11 +394,14 @@ def printMIDI( ):
 def main( ):
 
 	geometricWaves(1)		# 0 = Detailed list, 1 = list form
-	sineWaves( )
+	#sineWaves( )
 	#lfoWaves( )
 	#printMIDI( )
 	#printOutErrors( )
 	#print(strings.cp)
+	#geoLatex( )
+	#sampLatex( )
+	#latexSamplePeriods( )
 
 if __name__ == "__main__":
 	main( )

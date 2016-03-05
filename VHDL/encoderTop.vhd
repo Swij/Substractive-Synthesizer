@@ -17,14 +17,14 @@ end encoderTop;
 architecture arch_encoderTop of encoderTop is
 
     component encoder is
-    port(clk     : in STD_LOGIC;
-         reset   : in STD_LOGIC;        
-         A       : in STD_LOGIC;        
-         B       : in STD_LOGIC;                
-         C  : in STD_LOGIC;        
-         change  : out STD_LOGIC;
-         dir     : out STD_LOGIC;
-         btn     : out STD_LOGIC);
+    port(clk    : in STD_LOGIC;
+         reset  : in STD_LOGIC;        
+         A      : in STD_LOGIC;        
+         B      : in STD_LOGIC;                
+         C      : in STD_LOGIC;        
+         change : out STD_LOGIC;
+         dir    : out STD_LOGIC;
+         btn    : out STD_LOGIC);
     end component;
     
     component debounce is 

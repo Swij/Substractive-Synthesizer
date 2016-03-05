@@ -4,17 +4,17 @@ use IEEE.NUMERIC_STD.ALL;
 use work.aids.ALL;
 use work.geometryPackage.all;
 
-entity oscillator_tb is
-end oscillator_tb;
+entity oscillator_tb1 is
+end oscillator_tb1;
 
-architecture Behavioral of oscillator_tb is
+architecture Behavioral of oscillator_tb1 is
 
     -- Component Declaration for the Unit Under Test (UUT)
     component oscillator is
     port( clk       : in STD_LOGIC;
           reset     : in STD_LOGIC;
           enable    : in STD_LOGIC;
-          waveForm  : in STD_LOGIC_VECTOR (2 downto 0);
+          waveForm  : in WAVE;
           note      : in STD_LOGIC_VECTOR (7 downto 0);
           semi      : in STD_LOGIC_VECTOR (4 downto 0);
           dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
@@ -25,7 +25,7 @@ architecture Behavioral of oscillator_tb is
     signal clk : STD_LOGIC := '0';
     signal reset : STD_LOGIC := '0';
     signal enable : STD_LOGIC := '0';
-    signal waveForm : STD_LOGIC_VECTOR (2 downto 0);
+    signal waveForm : WAVE;
     signal note : STD_LOGIC_VECTOR (7 downto 0);
     signal semi : STD_LOGIC_VECTOR (4 downto 0);
     signal dutyCycle : STD_LOGIC_VECTOR (7 downto 0);
@@ -58,8 +58,8 @@ begin
     
     reset <= '0';
     enable <= '0';
-    waveForm <= "000";
-    note <= "10000011";
+    waveForm <= SINE;
+    note <= "01011111";
     semi <= "00000";
     dutyCycle <= "01010010";
     
@@ -70,11 +70,11 @@ begin
     
     wait for clk_period;
 
-    for i in 131 downto 0 loop
+    for i in 95 downto 0 loop
 
         wait for clk_period*getT(i)*4;
         
-        waveForm <= std_logic_vector(to_unsigned(i mod 6,3));        
+        waveForm <= to_wave(std_logic_vector(to_unsigned(i mod 6,3)));        
         note <= std_logic_vector(unsigned(note) - 1);
         
         wait for clk_period;

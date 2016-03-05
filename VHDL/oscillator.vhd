@@ -61,16 +61,16 @@ begin
         if enable = '1' then        
             case waveForm is
                 when SINE => -- Sine
-                    output <= out_sin(16 downto 5);                
+                    output <= out_sin(15 downto 4);                
                 when COSINE => -- Cosine
-                    output <= out_cos(16 downto 5);                   
+                    output <= out_cos(15 downto 4);                   
                 when SQUARE | TRIANGLE | SAW1 | SAW2 | NOISE =>
                      output <= out_geo;
                 when others =>
                     output <= (OTHERS => '0');
             end case;        
         else          
-            output <= (OTHERS => '0');            
+            output <= (OTHERS => '0');
         end if;
     end if;
 end process;

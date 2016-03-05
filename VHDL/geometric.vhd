@@ -7,7 +7,7 @@ use work.geometryPackage.all;
 
 entity geometric is
     generic(
-        accSize : natural := 18;
+        accSize : natural := 12;
         dacWidth : natural := 12
     );
     port( 
@@ -27,8 +27,8 @@ end geometric;
 architecture arch_geometric of geometric is
 
     signal squareWave   : STD_LOGIC_VECTOR(11 downto 0);
-    signal triangleWave : STD_LOGIC_VECTOR(accSize-1 downto 0);
-    signal sawWave      : STD_LOGIC_VECTOR(accSize-1 downto 0);
+    signal triangleWave : STD_LOGIC_VECTOR(11 downto 0);
+    signal sawWave      : STD_LOGIC_VECTOR(11 downto 0);
     
     signal triangleState : STD_LOGIC;
     
@@ -38,7 +38,7 @@ architecture arch_geometric of geometric is
     signal duty    : integer range 0 to 2**31 - 1;
     
     signal inc     : integer range 0 to 2**31 - 1;
-    signal sum     : integer range -2**(accSize) to (2**(accSize)-1);
+    signal sum     : integer;-- range -2**(accSize) to (2**(accSize)-1);
     
     signal clkCnt  : integer range 0 to 2**31 - 1;
     signal noteReg : STD_LOGIC_VECTOR (7 downto 0);
@@ -75,66 +75,49 @@ begin
         if noteReg /= note or waveReg /= waveForm then
         
             noteReg <= note;
-            waveReg <= waveForm;
-             
+            waveReg <= waveForm;             
             semit := to_integer(unsigned(semi));
         
-            if semit = 0 then
-    
+            if semit = 0 then    
                 F_s <= getFs(to_integer(unsigned(note)));
                 F_s_clk <= 0;
     
             --  Square
-                if waveForm = SQUARE then
-    
+                if waveForm = SQUARE then    
                     clkCnt <= 0;
                     sum <= 0;
-                    T <= getT(to_integer(unsigned(note)));
-                
-                    duty <= getT(to_integer(unsigned(note))) / 100 * to_integer(unsigned(dutyCycle));
-                    
+                    T <= getT(to_integer(unsigned(note)));                
+                    duty <= getT(to_integer(unsigned(note))) / 100 * to_integer(unsigned(dutyCycle));                    
                     squareWave <= ('0',OTHERS => '1');
                     output <= squareWave;
     
             --  Triangle    
                 elsif waveForm = TRIANGLE then
-    
-                    --  Phase shift the clock
-                    clkCnt <= getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/32;
-                    sum <= 0;
+                --  Phase shift the clock
+                    clkCnt <= 0;    --getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/32;
+                    sum <= -2**(11)+1;
                     T <= getT(to_integer(unsigned(note)));
-                    inc <= getInc(2);
+                    inc <= getInc(0);                    
+                    triangleState <= '1';                    
+                    triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,12));                  
+                    output <= triangleWave;
                     
-                    triangleState <= '1';
-                    
-                    triangleWave <= ('0',OTHERS => '0');
-                    
-                    output <= triangleWave(17 downto 6); -- 17 - 6
-                    --output <= triangleWave(accSize-1 downto accSize-dacWidth); -- 17 - 6
-    
             --  Saw
                 elsif waveForm = SAW1 then
-                
                     clkCnt <= 0;
-                    sum <= -2**(accSize-1);
+                    sum <= -2**(11)+1;
                     T <= getT(to_integer(unsigned(note)));
-                    inc <= getInc(1);
+                    inc <= getInc(1);                    
+                    sawWave <= STD_LOGIC_VECTOR(to_signed(sum,12));
+                    output <= sawWave;
                     
-                    sawWave <= STD_LOGIC_VECTOR(to_signed(sum,accSize));                
-                    --output <= sawWave(17 downto 6);
-                    --output <= ('1',OTHERS => '0');
-                    output <= sawWave(accSize-1 downto accSize-dacWidth);
-                    
-                else --  waveForm = "11" then
-    
+                else --  waveForm = "11" then    
                     clkCnt <= 0;
-                    sum <= 2**(accSize-1)-1;
+                    sum <= 2**(11)-1;
                     T <= getT(to_integer(unsigned(note)));
-                    inc <= getInc(1);
-                    
-                    sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,accSize));
-                    output <= sawWave(17 downto 6);
-                    --output <= sawWave(accSize-1 downto accSize-dacWidth);
+                    inc <= getInc(1);                    
+                    sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,12));
+                    output <= sawWave;
                     
                 end if;
             
@@ -169,19 +152,17 @@ begin
                 ----------------------------------------------------------------
                 --  Set triangle state - down or up
                 ----------------------------------------------------------------
-                if clkCnt = T/4 then
+                if clkCnt = T/2 then
                     
                     triangleState <= not triangleState;
+                    sum <= 2**(11)-1;
                     
-                elsif clkCnt = 3*T/4 then
-                
-                    triangleState <= not triangleState;
-                
                 elsif clkCnt = T then
                 
                     clkCnt <= 0;
-                    squareWave <= not squareWave;                 
-                                        
+                    F_s_clk <= 0;
+                    squareWave <= not squareWave;
+                    triangleState <= not triangleState;
                 end if;
                 ----------------------------------------------------------------
                 --  Sample Increment
@@ -190,14 +171,10 @@ begin
                 
                     F_s_clk <= 0;
                     
-                    if triangleState = '1' then
-                    
-                        sum <= sum + inc;
-                        
-                    else
-                    
-                        sum <= sum - inc;
-                        
+                    if triangleState = '1' then                    
+                        sum <= sum + inc;                        
+                    else                    
+                        sum <= sum - inc;                        
                     end if;
                     
                 end if;
@@ -210,7 +187,7 @@ begin
                     
                 end if;
                 
-                triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,accSize));
+                triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,12));
                 
                 if waveForm = SQUARE then
                 
@@ -218,7 +195,7 @@ begin
                     
                 else
                 
-                    output <= triangleWave(17 downto 6);
+                    output <= triangleWave;--(17 downto 6);
                     
                 end if;
                 
@@ -233,14 +210,10 @@ begin
                     F_s_clk <= 0;
                     clkCnt <= 0;
                     
-                    if waveForm = SAW1 then
-                    
-                        sum <= -2**(accSize-1);
-                        
+                    if waveForm = SAW1 then                    
+                        sum <= -2**(11);
                     else
-                        
-                        sum <= 2**(accSize-1)-1;
-                        
+                        sum <= 2**(11)-1;
                     end if;
                     
                 --  Increment
@@ -249,19 +222,15 @@ begin
                     F_s_clk <= 0;
                     
                     if waveForm = SAW1 then
-                    
                         sum <= sum + inc;
-                        
                     else
-                    
                         sum <= sum - inc;
-                        
                     end if;
                 
                 end if;
                 
-                sawWave <= STD_LOGIC_VECTOR(to_signed(sum,accSize));
-                output <= sawWave(17 downto 6);--18-1 to 18-12 = 17 to 6
+                sawWave <= STD_LOGIC_VECTOR(to_signed(sum,12));
+                output <= sawWave;--(17 downto 6);--18-1 to 18-12 = 17 to 6
                 
                 
 -------------------------------------------------------------------------------
