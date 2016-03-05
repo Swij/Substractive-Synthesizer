@@ -135,9 +135,28 @@ architecture arch_top of top is
     signal DACstart : std_logic;
     signal DACready : std_logic;
 
+    --  Envelope component
+    component ASR is
+    generic( WIDTH : integer := 12);
+    port( clk      : in std_logic;
+          reset    : in std_logic;
+          x        : in std_logic_vector(WIDTH-1 downto 0);
+          attack   : in std_logic;
+          release  : in std_logic;
+          atk_time : in std_logic_vector(WIDTH-1 downto 0);
+          rls_time : in std_logic_vector(WIDTH-1 downto 0);
+          y        : out std_logic_vector(WIDTH-1 downto 0));
+    end component;
+    
+    signal ASR_x        : std_logic_vector(12-1 downto 0);
+    signal ASR_attack   : std_logic;
+    signal ASR_release  : std_logic;
+    signal ASR_atk_time : std_logic_vector(12-1 downto 0);
+    signal ASR_rls_time : std_logic_vector(12-1 downto 0);
+    signal ASR_y        : std_logic_vector(12-1 downto 0);
+    
     --  Next below here...
     --  ...
-
 
     --  Test signals and others...
     signal gpioLEDS   : std_logic_vector(3 downto 0);
@@ -177,7 +196,8 @@ encoderTop_comp:component encoderTop
 DAC_comp:component AD5065_DAC
     port map( clk, reset, DACdata, DACstart, DACready, XADC_GPIO_1, XADC_GPIO_3, XADC_GPIO_2, XADC_GPIO_0 );
 
-
+ASR_comp:component ASR
+    port map( clk, reset, ASR_x, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
 
 --------------------------------------------------------------------------------
 ----         GPIO     coupling
