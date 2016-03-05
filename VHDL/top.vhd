@@ -1,14 +1,3 @@
--- DIP-Switch 2->0 selects wave
---   000=Sine, 001=Cosine, 010=Square, 011=Triangle, 100=Saw1, 101=Saw2, 110=Noise, 111=???
---
--- DIP-Switch 3 enable/disable oscillator
---
--- GPI0_SW_N - Semi up
--- GPI0_SW_S - Semi down
--- GPI0_SW_E - Tune up
--- GPI0_SW_W - Tune down
--- GPI0_SW_C - Reset
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -41,7 +30,7 @@ entity top is
            XADC_GPIO_0 : out STD_LOGIC;  --  LDAC
            XADC_GPIO_1 : out STD_LOGIC;  --  SCLK
            XADC_GPIO_2 : out STD_LOGIC;  --  DIN
-           XADC_GPIO_3 : out STD_LOGIC  --  SYNC
+           XADC_GPIO_3 : out STD_LOGIC   --  SYNC
     );
 end top;
 
@@ -158,6 +147,7 @@ architecture arch_top of top is
     --  Next below here...
     --  ...
 
+
     --  Test signals and others...
     signal gpioLEDS   : std_logic_vector(3 downto 0);
     
@@ -202,20 +192,12 @@ ASR_comp:component ASR
 --------------------------------------------------------------------------------
 ----         GPIO     coupling
 --------------------------------------------------------------------------------
---    waveForm <= to_wave(GPIO_DIP_SW2 & GPIO_DIP_SW1 & GPIO_DIP_SW0);
---    reset <= not GPIO_SW_C;
---    enable <=  GPIO_DIP_SW3;
---    filterIn <= output;
 
     GPIO_LED_0 <= gpioLEDS(0);
     GPIO_LED_1 <= gpioLEDS(1);
     GPIO_LED_2 <= gpioLEDS(2);
     GPIO_LED_3 <= gpioLEDS(3);
 
---    note <= "01000010"; -- note 66
-
-    
-    
 top_process:
 process(clk)
 begin
@@ -251,18 +233,11 @@ begin
                         note <= std_logic_vector(unsigned(note) - 1);
                     end if;
                 end if;
-            end if;              
-        
-            
+            end if;   
             
         --  DAC               
             if DACready = '1' then
---                DACdata(15) <= GPIO_DIP_SW3;
---                DACdata(14) <= GPIO_DIP_SW2;
---                DACdata(13) <= GPIO_DIP_SW1;
---                DACdata(12) <= GPIO_DIP_SW0;
                 DACdata(15 downto 12) <= (OTHERS => '0');
---                DACdata(11 downto 0) <= (OTHERS => '1');
                 DACdata(11 downto 0) <= std_logic_vector(signed(output) + 2048);
                 DACstart <= '1';
             else
@@ -270,6 +245,7 @@ begin
             end if;
             
         --  Select Wave
+        --  000=Sine, 001=Cosine, 010=Square, 011=Triangle, 100=Saw1, 101=Saw2, 110=Noise, 111=???
             waveForm <= to_wave(GPIO_DIP_SW2 & GPIO_DIP_SW1 & GPIO_DIP_SW0);
             dutyCycle <= "00110010";
             semi <= "00000";
@@ -282,18 +258,3 @@ begin
     
 end process;    
 end arch_top;
-
---            if GPIO_SW_N = '1' then -- Semi up
-            
---            elsif GPIO_SW_S = '1' then -- Semi down
-            
---            elsif GPIO_SW_E = '1' then -- Tune up
---                if unsigned(note) < 131 then
---                    note <= std_logic_vector(unsigned(note)+1);
---                end if;
---            elsif GPIO_SW_W = '1' then -- Tune down
---                if unsigned(note) > 0 then
---                    note <= std_logic_vector(unsigned(note)-1);
---                end if;
---            end if;
---        end if;
