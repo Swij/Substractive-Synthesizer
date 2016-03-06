@@ -25,9 +25,9 @@ begin
 
         if cnt = (prescale-1) then
             cnt := 0;
-            preClk <= not(clkReg);
-            clkReg <= not(clkReg);
+            preClk <= '1';--not(clkReg);
         else
+            preClk <= '0';--not(clkReg);
             cnt := cnt + 1;
         end if;
         

@@ -7,30 +7,55 @@ library UNISIM;
 use UNISIM.VComponents.all;
 
 entity top is
-    port ( SYSCLK_P  : in STD_LOGIC;
-           SYSCLK_N  : in STD_LOGIC;
-           GPIO_SW_N : in STD_LOGIC;
-           GPIO_SW_S : in STD_LOGIC;
-           GPIO_SW_W : in STD_LOGIC;
-           GPIO_SW_E : in STD_LOGIC;
-           GPIO_SW_C : in STD_LOGIC;
-           GPIO_LED_0 : out STD_LOGIC;
-           GPIO_LED_1 : out STD_LOGIC;
-           GPIO_LED_2 : out STD_LOGIC;
-           GPIO_LED_3 : out STD_LOGIC;
-           --FMC1_HPC_HA09_P : in STD_LOGIC;
-           --FMC1_HPC_HA09_N : in STD_LOGIC;
-           ROTARY_INCA : in STD_LOGIC;
-           ROTARY_INCB : in STD_LOGIC;
-           ROTARY_PUSH : in STD_LOGIC;
-           GPIO_DIP_SW0 : in STD_LOGIC;
-           GPIO_DIP_SW1 : in STD_LOGIC;
-           GPIO_DIP_SW2 : in STD_LOGIC;
-           GPIO_DIP_SW3 : in STD_LOGIC;
-           XADC_GPIO_0 : out STD_LOGIC;  --  LDAC
-           XADC_GPIO_1 : out STD_LOGIC;  --  SCLK
-           XADC_GPIO_2 : out STD_LOGIC;  --  DIN
-           XADC_GPIO_3 : out STD_LOGIC   --  SYNC
+    port ( 
+        SYSCLK_P  : in STD_LOGIC;
+        SYSCLK_N  : in STD_LOGIC;
+        GPIO_SW_N : in STD_LOGIC;
+        GPIO_SW_S : in STD_LOGIC;
+        GPIO_SW_W : in STD_LOGIC;
+        GPIO_SW_E : in STD_LOGIC;
+        GPIO_SW_C : in STD_LOGIC;
+        GPIO_LED_0 : out STD_LOGIC;
+        GPIO_LED_1 : out STD_LOGIC;
+        GPIO_LED_2 : out STD_LOGIC;
+        GPIO_LED_3 : out STD_LOGIC;
+        --FMC1_HPC_HA09_P : in STD_LOGIC;
+        --FMC1_HPC_HA09_N : in STD_LOGIC;
+        ROTARY_INCA : in STD_LOGIC;
+        ROTARY_INCB : in STD_LOGIC;
+        ROTARY_PUSH : in STD_LOGIC;
+        GPIO_DIP_SW0 : in STD_LOGIC;
+        GPIO_DIP_SW1 : in STD_LOGIC;
+        GPIO_DIP_SW2 : in STD_LOGIC;
+        GPIO_DIP_SW3 : in STD_LOGIC;
+        --  DAC
+        XADC_GPIO_0 : out STD_LOGIC;  --  LDAC
+        XADC_GPIO_1 : out STD_LOGIC;  --  SCLK
+        XADC_GPIO_2 : out STD_LOGIC;  --  DIN
+        XADC_GPIO_3 : out STD_LOGIC;  --  SYNC
+        
+        --  ENCODERS
+        FMC1_HPC_HA02_P : in STD_LOGIC;
+        FMC1_HPC_HA02_N : in STD_LOGIC;
+        FMC1_HPC_HA03_P : in STD_LOGIC;
+        FMC1_HPC_HA03_N : in STD_LOGIC;
+        FMC1_HPC_HA04_P : in STD_LOGIC;
+        FMC1_HPC_HA04_N : in STD_LOGIC;
+        FMC1_HPC_HA05_P : in STD_LOGIC;
+        FMC1_HPC_HA05_N : in STD_LOGIC;
+        FMC1_HPC_HA06_P : in STD_LOGIC;
+        FMC1_HPC_HA06_N : in STD_LOGIC;
+        FMC1_HPC_HA07_P : in STD_LOGIC;
+        FMC1_HPC_HA07_N : in STD_LOGIC;
+        FMC1_HPC_HA08_P : in STD_LOGIC;
+        FMC1_HPC_HA08_N : in STD_LOGIC;
+        FMC1_HPC_HA09_P : in STD_LOGIC;
+        FMC1_HPC_HA09_N : in STD_LOGIC;
+        FMC1_HPC_HA19_P : in STD_LOGIC;
+        FMC1_HPC_HA19_N : in STD_LOGIC;        
+        
+        FMC1_HPC_HA10_P : out STD_LOGIC; -- +
+        FMC1_HPC_HA10_N : out STD_LOGIC  -- -
     );
 end top;
 
@@ -74,22 +99,27 @@ architecture arch_top of top is
         dir    : out STD_LOGIC;
         btn    : out STD_LOGIC);
     end component;
+
     
 --    --signal btnPin   : STD_LOGIC;
     signal change : STD_LOGIC;
     signal dir    : STD_LOGIC;
     signal btn    : STD_LOGIC;
+    
+    
+    type encoderArray is array (0 to 5) of std_logic_vector(2 downto 0);
+    signal encoders : encoderArray;
 
     --  Prescale component
---    component prescaler is
---        generic (prescale : NATURAL := 4000);
---        port ( 
---            clk    : IN STD_LOGIC;
---            preClk : OUT STD_LOGIC
---        );
---    end component;
+    component prescaler is
+        generic (prescale : NATURAL := 4000);
+        port ( 
+            clk    : IN STD_LOGIC;
+            preClk : OUT STD_LOGIC
+        );
+    end component;
     
---    signal preClk : STD_LOGIC;
+    signal preClk : STD_LOGIC;
      
     -- IIR filter component
 --    component IIR is
@@ -175,10 +205,28 @@ oscillator_comp:component oscillator
 
 encoderTop_comp:component encoderTop
     port map( clk, '1', ROTARY_INCA, ROTARY_INCB, ROTARY_PUSH, change, dir, btn );
+    
+encoderTop_comp1:component encoderTop
+    port map( clk, '1', FMC1_HPC_HA02_P, FMC1_HPC_HA02_N, FMC1_HPC_HA03_P, encoders(0)(0), encoders(0)(1), encoders(0)(2) );
+        
+encoderTop_comp2:component encoderTop
+    port map( clk, '1', FMC1_HPC_HA03_N, FMC1_HPC_HA04_P, FMC1_HPC_HA04_N, encoders(1)(0), encoders(1)(1), encoders(1)(2) );
+    
+encoderTop_comp3:component encoderTop
+    port map( clk, '1', FMC1_HPC_HA05_P, FMC1_HPC_HA05_N, FMC1_HPC_HA06_P, encoders(2)(0), encoders(2)(1), encoders(2)(2) );
+    
+encoderTop_comp4:component encoderTop
+    port map( clk, '1', FMC1_HPC_HA06_N, FMC1_HPC_HA07_P, FMC1_HPC_HA07_N, encoders(3)(0), encoders(3)(1), encoders(3)(2) );
+   
+encoderTop_comp5:component encoderTop
+    port map( clk, '1', FMC1_HPC_HA08_P, FMC1_HPC_HA08_N, FMC1_HPC_HA09_P, encoders(4)(0), encoders(4)(1), encoders(4)(2) );
+    
+encoderTop_comp6:component encoderTop
+    port map( clk, '1', FMC1_HPC_HA09_N, FMC1_HPC_HA19_P, FMC1_HPC_HA19_N, encoders(5)(0), encoders(5)(1), encoders(5)(2) );
 
---prescale_comp:component prescaler
---    generic map ( prescale => 4000 )
---    port map ( clk, preClk );
+prescale_comp:component prescaler
+    generic map ( prescale => 4000 )
+    port map ( clk, preClk );
 
 --IIR_comp:component IIR
 --    port map ( preClk, filterIn, reset, filterOut, finished );
@@ -186,8 +234,8 @@ encoderTop_comp:component encoderTop
 DAC_comp:component AD5065_DAC
     port map( clk, reset, DACdata, DACstart, DACready, XADC_GPIO_1, XADC_GPIO_3, XADC_GPIO_2, XADC_GPIO_0 );
 
-ASR_comp:component ASR
-    port map( clk, reset, ASR_x, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
+--ASR_comp:component ASR
+--    port map( clk, reset, ASR_x, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
 
 --------------------------------------------------------------------------------
 ----         GPIO     coupling
@@ -197,6 +245,9 @@ ASR_comp:component ASR
     GPIO_LED_1 <= gpioLEDS(1);
     GPIO_LED_2 <= gpioLEDS(2);
     GPIO_LED_3 <= gpioLEDS(3);
+
+    FMC1_HPC_HA10_P <= '1';
+    FMC1_HPC_HA10_N <= '0';
 
 top_process:
 process(clk)
@@ -218,7 +269,19 @@ begin
             reset <= '1';
             
          
-       --  NOTE CHANGE WITH THE ENCODER
+       --  NOTE CHANGE WITH THE ENCODER       
+            if encoders(5)(0) = '1' then
+                if encoders(5)(1) = '1' then
+                    if unsigned(note) < 95 then
+                       note <= std_logic_vector(unsigned(note) + 1);
+                    end if;    
+                else
+                    if unsigned(note) > 0 then
+                        note <= std_logic_vector(unsigned(note) - 1);
+                    end if;    
+                end if;
+            end if;  
+       
             if change = '1' then
                 if dir = '1' then
                     gpioLEDS(0) <= not(gpioLEDS(0));
@@ -236,20 +299,87 @@ begin
             end if;   
             
         --  DAC               
-            if DACready = '1' then
-                DACdata(15 downto 12) <= (OTHERS => '0');
-                DACdata(11 downto 0) <= std_logic_vector(signed(output) + 2048);
-                DACstart <= '1';
-            else
-                DACstart <= '0';
+            if preClk = '1' then
+                if DACready = '1' then
+                    DACdata(15 downto 12) <= (OTHERS => '0');
+                    DACdata(11 downto 0) <= std_logic_vector(signed(output) + 2048);
+                    DACstart <= '1';
+                else
+                    DACstart <= '0';
+                end if;
             end if;
-            
+                
         --  Select Wave
         --  000=Sine, 001=Cosine, 010=Square, 011=Triangle, 100=Saw1, 101=Saw2, 110=Noise, 111=???
             waveForm <= to_wave(GPIO_DIP_SW2 & GPIO_DIP_SW1 & GPIO_DIP_SW0);
             dutyCycle <= "00110010";
             semi <= "00000";
             enable <= '1';
+            
+        --  ENCODER PCB
+            
+            if encoders(0)(0) = '1' then
+                if encoders(0)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                else
+                    gpioLEDS(2) <= not(gpioLEDS(2));
+                    gpioLEDS(3) <= not(gpioLEDS(3));
+                end if;
+            end if;  
+            
+            if encoders(1)(0) = '1' then
+                if encoders(1)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                else
+                    gpioLEDS(2) <= not(gpioLEDS(2));
+                    gpioLEDS(3) <= not(gpioLEDS(3));
+    
+                end if;
+            end if;  
+            
+            if encoders(2)(0) = '1' then
+                if encoders(2)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                else
+                    gpioLEDS(2) <= not(gpioLEDS(2));
+                    gpioLEDS(3) <= not(gpioLEDS(3));
+                end if;
+            end if;  
+            
+            if encoders(3)(0) = '1' then
+                if encoders(3)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                else
+                    gpioLEDS(2) <= not(gpioLEDS(2));
+                    gpioLEDS(3) <= not(gpioLEDS(3));
+
+                end if;
+            end if;  
+            
+            if encoders(4)(0) = '1' then
+                if encoders(4)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                else
+                    gpioLEDS(2) <= not(gpioLEDS(2));
+                    gpioLEDS(3) <= not(gpioLEDS(3));
+                end if;
+            end if;  
+            
+--            if encoders(5)(0) = '1' then
+--                if encoders(5)(1) = '1' then
+--                    gpioLEDS(0) <= not(gpioLEDS(0));
+--                    gpioLEDS(1) <= not(gpioLEDS(1));
+--                else
+--                    gpioLEDS(2) <= not(gpioLEDS(2));
+--                    gpioLEDS(3) <= not(gpioLEDS(3));
+--                end if;
+--            end if;  
+                        
             
         end if;  
          

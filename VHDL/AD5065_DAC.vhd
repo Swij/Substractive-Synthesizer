@@ -40,7 +40,7 @@ architecture arch_AD5065_DAC of AD5065_DAC is
 --    1     1     1     1     Both DACs
       
 --    Command Definitions
-    constant command : std_logic_vector(3 downto 0) := "0011";
+    constant command : std_logic_vector(3 downto 0) := "0000";
 --    C3    C2    C1    C0
       
 --    0     0     0     0     Write to Input Register n

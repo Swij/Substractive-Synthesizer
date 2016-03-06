@@ -152,13 +152,10 @@ begin
                 ----------------------------------------------------------------
                 --  Set triangle state - down or up
                 ----------------------------------------------------------------
-                if clkCnt = T/2 then
-                    
+                if clkCnt = T/2 then                    
                     triangleState <= not triangleState;
-                    sum <= 2**(11)-1;
-                    
-                elsif clkCnt = T then
-                
+                    sum <= 2**(11)-1;                    
+                elsif clkCnt = T then                
                     clkCnt <= 0;
                     F_s_clk <= 0;
                     squareWave <= not squareWave;
@@ -167,36 +164,27 @@ begin
                 ----------------------------------------------------------------
                 --  Sample Increment
                 ----------------------------------------------------------------
-                if F_s_clk = F_s then
-                
-                    F_s_clk <= 0;
-                    
+                if F_s_clk = F_s then                
+                    F_s_clk <= 0;                    
                     if triangleState = '1' then                    
                         sum <= sum + inc;                        
                     else                    
                         sum <= sum - inc;                        
-                    end if;
-                    
+                    end if;                    
                 end if;
                 ----------------------------------------------------------------
                 --  Square wave
                 ----------------------------------------------------------------
-                if clkCnt = duty then
-                
-                    squareWave <= not squareWave;
-                    
+                if clkCnt = duty then                
+                    squareWave <= not squareWave;                    
                 end if;
                 
-                triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,12));
+                triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,12));                
                 
-                if waveForm = SQUARE then
-                
-                    output <= squareWave;
-                    
-                else
-                
-                    output <= triangleWave;--(17 downto 6);
-                    
+                if waveForm = SQUARE then                
+                    output <= squareWave;                    
+                else                
+                    output <= triangleWave;
                 end if;
                 
 -------------------------------------------------------------------------------

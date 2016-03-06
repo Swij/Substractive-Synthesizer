@@ -61,7 +61,7 @@ begin
     waveForm <= SINE;
     note <= "01011111";
     semi <= "00000";
-    dutyCycle <= "01010010";
+    dutyCycle <= "00110010";
     
     wait for 10 ns;
 
