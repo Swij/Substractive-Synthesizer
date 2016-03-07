@@ -3,6 +3,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 package aids is
+    -- Filter type enumerator
+    type FILTER is (LP, HP, BP);
+    
     -- Enumerator for oscillator-wave types
     type WAVE is (SINE, COSINE, SQUARE, TRIANGLE, SAW1, SAW2, NOISE);
     

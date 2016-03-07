@@ -89,29 +89,29 @@ begin
     wait for 200 ns;
     GPI0_SW_C <= '0';
     
-    -- SQUARE
-    GPIO_DIP_SW2 <= '0';
-    GPIO_DIP_SW1 <= '1';
-    GPIO_DIP_SW0 <= '0';
-    wait for 1000 us;
+--    -- SQUARE
+--    GPIO_DIP_SW2 <= '0';
+--    GPIO_DIP_SW1 <= '1';
+--    GPIO_DIP_SW0 <= '0';
+--    wait for 3000 us;
        
-    -- TRIANGLE
-    GPIO_DIP_SW2 <= '0';
-    GPIO_DIP_SW1 <= '1';
-    GPIO_DIP_SW0 <= '1';
-    wait for 1000 us;
+--    -- TRIANGLE
+--    GPIO_DIP_SW2 <= '0';
+--    GPIO_DIP_SW1 <= '1';
+--    GPIO_DIP_SW0 <= '1';
+--    wait for 3000 us;
     
-    -- SAW1
-    GPIO_DIP_SW2 <= '1';
-    GPIO_DIP_SW1 <= '0';
-    GPIO_DIP_SW0 <= '0';
-    wait for 1000 us;
+--    -- SAW1
+--    GPIO_DIP_SW2 <= '1';
+--    GPIO_DIP_SW1 <= '0';
+--    GPIO_DIP_SW0 <= '0';
+--    wait for 1000 us;
         
-    -- SAW2
-    GPIO_DIP_SW2 <= '1';
-    GPIO_DIP_SW1 <= '0';
-    GPIO_DIP_SW0 <= '1';
-    wait for 1000 us;
+--    -- SAW2
+--    GPIO_DIP_SW2 <= '1';
+--    GPIO_DIP_SW1 <= '0';
+--    GPIO_DIP_SW0 <= '1';
+--    wait for 1000 us;
     
 --    -- NOISE
 --    GPIO_DIP_SW2 <= '1';
@@ -123,13 +123,13 @@ begin
     GPIO_DIP_SW2 <= '0';
     GPIO_DIP_SW1 <= '0';
     GPIO_DIP_SW0 <= '0';
-    wait for 1000 us;
+    wait for 10000 us;
     
-    -- COSINE
-    GPIO_DIP_SW2 <= '0';
-    GPIO_DIP_SW1 <= '0';
-    GPIO_DIP_SW0 <= '1';
-    wait for 1000 us;
+--    -- COSINE
+--    GPIO_DIP_SW2 <= '0';
+--    GPIO_DIP_SW1 <= '0';
+--    GPIO_DIP_SW0 <= '1';
+--    wait for 1000 us;
     
     assert false report "End of simulation" severity FAILURE;
 end process;
