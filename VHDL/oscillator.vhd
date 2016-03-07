@@ -47,7 +47,7 @@ architecture arch_oscillator of oscillator is
 begin
 
 sineWave_comp: sineWave
-    port map( clk, reset, enable, note, semi, out_sin, out_cos );
+    port map( clk, reset, enable, note, semi, out_cos, out_sin );
 
 geometry_comp: geometric
     port map( clk, reset, enable, waveForm, note, dutyCycle, semi, out_geo);
