@@ -1,14 +1,3 @@
--- DIP-Switch 2->0 selects wave
---   000=Sine, 001=Cosine, 010=Square, 011=Triangle, 100=Saw1, 101=Saw2, 110=Noise, 111=???
---
--- DIP-Switch 3 enable/disable oscillator
---
--- GPI0_SW_N - Semi up
--- GPI0_SW_S - Semi down
--- GPI0_SW_E - Tune up
--- GPI0_SW_W - Tune down
--- GPI0_SW_C - Reset
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -18,22 +7,60 @@ library UNISIM;
 use UNISIM.VComponents.all;
 
 entity top_sim is
-    port (  clk       : in STD_LOGIC;
-            GPI0_SW_C : in STD_LOGIC;
-            GPI0_SW_N : in STD_LOGIC;
-            GPI0_SW_S : in STD_LOGIC;
-            GPI0_SW_E : in STD_LOGIC;
-            GPI0_SW_W : in STD_LOGIC;
-            GPIO_DIP_SW0 : in STD_LOGIC;
-            GPIO_DIP_SW1 : in STD_LOGIC;
-            GPIO_DIP_SW2 : in STD_LOGIC;
-            GPIO_DIP_SW3 : in STD_LOGIC;
-            ROTARY_INCA : in STD_LOGIC;
-            ROTARY_INCB : in STD_LOGIC;
-            ROTARY_PUSH : in STD_LOGIC);
+    port (
+        SYSCLK_P  : in STD_LOGIC;
+        SYSCLK_N  : in STD_LOGIC;
+        GPIO_SW_N : in STD_LOGIC;
+        GPIO_SW_S : in STD_LOGIC;
+        GPIO_SW_W : in STD_LOGIC;
+        GPIO_SW_E : in STD_LOGIC;
+        GPIO_SW_C : in STD_LOGIC;
+        GPIO_LED_0 : out STD_LOGIC;
+        GPIO_LED_1 : out STD_LOGIC;
+        GPIO_LED_2 : out STD_LOGIC;
+        GPIO_LED_3 : out STD_LOGIC;
+        --FMC1_HPC_HA09_P : in STD_LOGIC;
+        --FMC1_HPC_HA09_N : in STD_LOGIC;
+        ROTARY_INCA : in STD_LOGIC;
+        ROTARY_INCB : in STD_LOGIC;
+        ROTARY_PUSH : in STD_LOGIC;
+        GPIO_DIP_SW0 : in STD_LOGIC;
+        GPIO_DIP_SW1 : in STD_LOGIC;
+        GPIO_DIP_SW2 : in STD_LOGIC;
+        GPIO_DIP_SW3 : in STD_LOGIC;
+        --  DAC
+        XADC_GPIO_0 : out STD_LOGIC;  --  LDAC
+        XADC_GPIO_1 : out STD_LOGIC;  --  SCLK
+        XADC_GPIO_2 : out STD_LOGIC;  --  DIN
+        XADC_GPIO_3 : out STD_LOGIC;  --  SYNC
+
+        --  ENCODERS
+        FMC1_HPC_HA02_P : in STD_LOGIC;
+        FMC1_HPC_HA02_N : in STD_LOGIC;
+        FMC1_HPC_HA03_P : in STD_LOGIC;
+        FMC1_HPC_HA03_N : in STD_LOGIC;
+        FMC1_HPC_HA04_P : in STD_LOGIC;
+        FMC1_HPC_HA04_N : in STD_LOGIC;
+        FMC1_HPC_HA05_P : in STD_LOGIC;
+        FMC1_HPC_HA05_N : in STD_LOGIC;
+        FMC1_HPC_HA06_P : in STD_LOGIC;
+        FMC1_HPC_HA06_N : in STD_LOGIC;
+        FMC1_HPC_HA07_P : in STD_LOGIC;
+        FMC1_HPC_HA07_N : in STD_LOGIC;
+        FMC1_HPC_HA08_P : in STD_LOGIC;
+        FMC1_HPC_HA08_N : in STD_LOGIC;
+        FMC1_HPC_HA09_P : in STD_LOGIC;
+        FMC1_HPC_HA09_N : in STD_LOGIC;
+        FMC1_HPC_HA19_P : in STD_LOGIC;
+        FMC1_HPC_HA19_N : in STD_LOGIC;
+
+        FMC1_HPC_HA10_P : out STD_LOGIC; -- +
+        FMC1_HPC_HA10_N : out STD_LOGIC  -- -
+    );
 end top_sim;
 
 architecture arch_top of top_sim is
+
     --  Clock signals
     signal counter : STD_LOGIC_VECTOR(31 downto 0) :=(others => '0');
 
@@ -46,14 +73,14 @@ architecture arch_top of top_sim is
            note      : in STD_LOGIC_VECTOR (7 downto 0);
            semi      : in STD_LOGIC_VECTOR (4 downto 0);
            dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
-           output : out STD_LOGIC_VECTOR (11 downto 0));
+           output    : out STD_LOGIC_VECTOR (11 downto 0));
     end component;
 
     signal reset     : STD_LOGIC;
     signal enable    : STD_LOGIC;
     signal waveForm  : WAVE;
     signal note      : STD_LOGIC_VECTOR (7 downto 0);
-    signal note2      : STD_LOGIC_VECTOR (7 downto 0);
+    signal note2     : STD_LOGIC_VECTOR (7 downto 0);
     signal semi      : STD_LOGIC_VECTOR (4 downto 0);
     signal dutyCycle : STD_LOGIC_VECTOR (7 downto 0);
     signal oscOutput : STD_LOGIC_VECTOR (11 downto 0);
@@ -62,24 +89,29 @@ architecture arch_top of top_sim is
     --  Encoder component
     component encoderTop is
     port(
-        clk         : in STD_LOGIC;
-        reset       : in STD_LOGIC;
-        A       : in STD_LOGIC;
-        B       : in STD_LOGIC;
+        clk    : in STD_LOGIC;
+        reset  : in STD_LOGIC;
+        A      : in STD_LOGIC;
+        B      : in STD_LOGIC;
         C      : in STD_LOGIC;
-        change      : out STD_LOGIC;
-        dir         : out STD_LOGIC;
-        btn         : out STD_LOGIC);
+        change : out STD_LOGIC;
+        dir    : out STD_LOGIC;
+        btn    : out STD_LOGIC);
     end component;
 
---    signal btnPin   : STD_LOGIC;
-    signal change   : STD_LOGIC;
-    signal dir      : STD_LOGIC;
-    signal btn      : STD_LOGIC;
 
-    -- Prescale component
+--    signal btnPin   : STD_LOGIC;
+    signal change : STD_LOGIC;
+    signal dir    : STD_LOGIC;
+    signal btn    : STD_LOGIC;
+
+
+    type encoderArray is array (0 to 5) of std_logic_vector(2 downto 0);
+    signal encoders : encoderArray;
+
+    --  Prescale component
     component prescaler is
-        generic ( prescale : NATURAL := 5000);
+        generic ( prescale : NATURAL := 4000);
         port ( clk    : IN STD_LOGIC;
                preClk : OUT STD_LOGIC);
     end component;
@@ -99,7 +131,7 @@ architecture arch_top of top_sim is
                y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
                finished : out STD_LOGIC);
     end component;
-    
+
     signal cutoff : integer := 1000;
     signal Q : real := 0.7071;
     signal ftype : FILTER := LP;

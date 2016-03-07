@@ -74,7 +74,7 @@ begin
 
         wait for clk_period*getT(i)*4;
         
-        waveForm <= to_wave(std_logic_vector(to_unsigned(i mod 6,3)));        
+        waveForm <= to_wave(std_logic_vector(to_unsigned(i mod 7,3)));        
         note <= std_logic_vector(unsigned(note) - 1);
         
         wait for clk_period;
