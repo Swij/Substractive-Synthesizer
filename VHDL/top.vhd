@@ -122,19 +122,26 @@ architecture arch_top of top is
     signal preClk : STD_LOGIC;
      
     -- IIR filter component
---    component IIR is
---        generic ( WIDTH : INTEGER:=12);
---        port ( clk      : STD_LOGIC;
---               x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
---               reset    : in STD_LOGIC;
---               y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
---               finished : out STD_LOGIC);
---    end component;
+    component IIR is
+        generic ( WIDTH : INTEGER:=12);
+        port ( clk      : STD_LOGIC;
+               fclk     : STD_LOGIC;
+               reset    : in STD_LOGIC;
+               ftype    : FILTER;
+               cutoff   : in integer;
+               Q        : in real;
+               x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+               y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+               finished : out STD_LOGIC);
+    end component;
 
---    signal finished : STD_LOGIC;
---    signal filterOut : STD_LOGIC_VECTOR(11 downto 0);
---    signal filterIn  : STD_LOGIC_VECTOR(11 downto 0);
-
+    signal cutoff : integer := 1000;
+    constant Q : real := 0.7071;
+    signal ftype : FILTER := LP;
+    signal finished : STD_LOGIC;
+    signal filterOut : STD_LOGIC_VECTOR(11 downto 0);
+    signal filterIn  : STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
+    
     --  DAC component
     component AD5065_DAC is
     generic( totalBits : natural := 32;
@@ -173,6 +180,8 @@ architecture arch_top of top is
     signal ASR_atk_time : std_logic_vector(12-1 downto 0);
     signal ASR_rls_time : std_logic_vector(12-1 downto 0);
     signal ASR_y        : std_logic_vector(12-1 downto 0);
+
+    
     
     --  Next below here...
     --  ...
@@ -228,8 +237,16 @@ prescale_comp:component prescaler
     generic map ( prescale => 4000 )
     port map ( clk, preClk );
 
---IIR_comp:component IIR
---    port map ( preClk, filterIn, reset, filterOut, finished );
+IIR_comp:component IIR
+    port map ( preClk,
+     clk,
+      reset,
+       ftype, 
+       cutoff,
+        Q, 
+        filterIn, 
+        filterOut, 
+        finished );
 
 DAC_comp:component AD5065_DAC
     port map( clk, reset, DACdata, DACstart, DACready, XADC_GPIO_1, XADC_GPIO_3, XADC_GPIO_2, XADC_GPIO_0 );
@@ -237,83 +254,156 @@ DAC_comp:component AD5065_DAC
 --ASR_comp:component ASR
 --    port map( clk, reset, ASR_x, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
 
+
+
 --------------------------------------------------------------------------------
 ----         GPIO     coupling
 --------------------------------------------------------------------------------
 
+    --  Just all LEDs
     GPIO_LED_0 <= gpioLEDS(0);
     GPIO_LED_1 <= gpioLEDS(1);
     GPIO_LED_2 <= gpioLEDS(2);
     GPIO_LED_3 <= gpioLEDS(3);
 
+    --  These are driving the encoders
     FMC1_HPC_HA10_P <= '1';
     FMC1_HPC_HA10_N <= '0';
 
+    --filterIn <= std_logic_vector(to_signed(to_integer(signed(oscOutput))+to_integer(signed(oscOutput2)), 13));
+    filterIn <= output;
+
+
+
+
 top_process:
 process(clk)
+variable waveReg : integer range 0 to 7 := 0;
+variable semiReg : integer range -11 to 11 := 0;
+variable dutyReg : integer range 0 to 100 := 0;
+variable cuttReg : integer range 0 to 4000 := 0;
 begin
 
     if rising_edge(clk) then
     
-    --  CHANGING NOTE
-        if GPIO_SW_N = '1' then     --tryck ner, blir hög
+    --  Reset when pushed
+        if GPIO_SW_N = '1' then 
         
             reset <= '0';            
             gpioLEDS(0) <= '0';
             gpioLEDS(1) <= '0';
             gpioLEDS(2) <= '1';
             gpioLEDS(3) <= '1';
+            waveReg := 0;
             
         else
         
             reset <= '1';
-            
-         
-       --  NOTE CHANGE WITH THE ENCODER       
+
+            --  NOTE
             if encoders(5)(0) = '1' then
                 if encoders(5)(1) = '1' then
                     if unsigned(note) < 95 then
-                       note <= std_logic_vector(unsigned(note) + 1);
-                    end if;    
-                else
-                    if unsigned(note) > 0 then
-                        note <= std_logic_vector(unsigned(note) - 1);
-                    end if;    
-                end if;
-            end if;  
-       
-            if change = '1' then
-                if dir = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                    gpioLEDS(1) <= not(gpioLEDS(1));                    
-                    if unsigned(note) < 95 then
                         note <= std_logic_vector(unsigned(note) + 1);
-                    end if;
+                    else
+                        note <= std_logic_vector(to_unsigned(95,8));
+                    end if;    
                 else
-                    gpioLEDS(2) <= not(gpioLEDS(2));
-                    gpioLEDS(3) <= not(gpioLEDS(3));                    
                     if unsigned(note) > 0 then
                         note <= std_logic_vector(unsigned(note) - 1);
-                    end if;
+                    else
+                        note <= (OTHERS => '0');
+                    end if;    
                 end if;
-            end if;   
+            end if;
+            
+            --  WAVE
+            --  000=Sine, 001=Cosine, 010=Square, 011=Triangle, 100=Saw1, 101=Saw2, 110=Saw1, 111=Saw2
+            if encoders(4)(0) = '1' then
+                if encoders(4)(1) = '1' then
+                    if waveReg < 7 then
+                        waveReg := waveReg + 1;
+                    else
+                        waveReg := 0;
+                    end if;    
+                else
+                    if waveReg > 0 then
+                        waveReg := waveReg - 1;
+                    else
+                        waveReg := 7;
+                    end if;    
+                end if;
+                waveForm <= to_wave(std_logic_vector(to_unsigned(waveReg,3)));
+            end if;
+                        
+            --  SEMI
+            if encoders(3)(0) = '1' then
+                if encoders(3)(1) = '1' then--increase
+                    if semiReg < 11 then
+                        semiReg := semiReg + 1;
+                    else
+                        semiReg := 11;
+                        
+                    end if;                      
+                else
+                    if semiReg > -11 then
+                        semiReg := semiReg - 1;
+                    else
+                        semiReg := -11;
+                    end if;    
+                end if;
+                semi <= std_logic_vector(to_signed(semiReg,5));
+            end if;
+            
+            --  DUTY
+            if encoders(2)(0) = '1' then
+                if encoders(2)(1) = '1' then
+                    if dutyReg < 99 then
+                        dutyReg := dutyReg + 1;
+                    else
+                        dutyReg := 99;
+                    end if;                      
+                else
+                    if dutyReg > 1 then
+                        dutyReg := dutyReg - 1;
+                    else
+                        dutyReg := 1;
+                    end if;    
+                end if;
+                dutyCycle <= std_logic_vector(to_signed(dutyReg,8));
+            end if;
+            
+            --  CUTTOFF
+            if encoders(1)(0) = '1' then
+                if encoders(1)(1) = '1' then
+                    if cuttReg < 3901 then
+                        cuttReg := cuttReg + 100;
+                    else
+                        cuttReg := 4000;
+                    end if;                      
+                else
+                    if cuttReg > 99 then
+                        cuttReg := cuttReg - 100;
+                    else
+                        cuttReg := 0;
+                    end if;
+                end if;    
+            end if;
             
         --  DAC               
             if preClk = '1' then
                 if DACready = '1' then
                     DACdata(15 downto 12) <= (OTHERS => '0');
-                    DACdata(11 downto 0) <= std_logic_vector(signed(output) + 2048);
+                    --DACdata(11 downto 0) <= std_logic_vector(signed(output) + 2048);
+                    DACdata(11 downto 0) <= filterOut;
                     DACstart <= '1';
                 else
                     DACstart <= '0';
                 end if;
             end if;
-                
-        --  Select Wave
-        --  000=Sine, 001=Cosine, 010=Square, 011=Triangle, 100=Saw1, 101=Saw2, 110=Noise, 111=???
-            waveForm <= to_wave(GPIO_DIP_SW2 & GPIO_DIP_SW1 & GPIO_DIP_SW0);
-            dutyCycle <= "00110010";
-            semi <= "00000";
+                            
+            --dutyCycle <= "00110010";
+            
             enable <= '1';
             
         --  ENCODER PCB
@@ -328,47 +418,47 @@ begin
                 end if;
             end if;  
             
-            if encoders(1)(0) = '1' then
-                if encoders(1)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                else
-                    gpioLEDS(2) <= not(gpioLEDS(2));
-                    gpioLEDS(3) <= not(gpioLEDS(3));
+--            if encoders(1)(0) = '1' then
+--                if encoders(1)(1) = '1' then
+--                    gpioLEDS(0) <= not(gpioLEDS(0));
+--                    gpioLEDS(1) <= not(gpioLEDS(1));
+--                else
+--                    gpioLEDS(2) <= not(gpioLEDS(2));
+--                    gpioLEDS(3) <= not(gpioLEDS(3));
     
-                end if;
-            end if;  
+--                end if;
+--            end if;  
             
-            if encoders(2)(0) = '1' then
-                if encoders(2)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                else
-                    gpioLEDS(2) <= not(gpioLEDS(2));
-                    gpioLEDS(3) <= not(gpioLEDS(3));
-                end if;
-            end if;  
+--            if encoders(2)(0) = '1' then
+--                if encoders(2)(1) = '1' then
+--                    gpioLEDS(0) <= not(gpioLEDS(0));
+--                    gpioLEDS(1) <= not(gpioLEDS(1));
+--                else
+--                    gpioLEDS(2) <= not(gpioLEDS(2));
+--                    gpioLEDS(3) <= not(gpioLEDS(3));
+--                end if;
+--            end if;  
             
-            if encoders(3)(0) = '1' then
-                if encoders(3)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                else
-                    gpioLEDS(2) <= not(gpioLEDS(2));
-                    gpioLEDS(3) <= not(gpioLEDS(3));
+--            if encoders(3)(0) = '1' then
+--                if encoders(3)(1) = '1' then
+--                    gpioLEDS(0) <= not(gpioLEDS(0));
+--                    gpioLEDS(1) <= not(gpioLEDS(1));
+--                else
+--                    gpioLEDS(2) <= not(gpioLEDS(2));
+--                    gpioLEDS(3) <= not(gpioLEDS(3));
 
-                end if;
-            end if;  
+--                end if;
+--            end if;  
             
-            if encoders(4)(0) = '1' then
-                if encoders(4)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                else
-                    gpioLEDS(2) <= not(gpioLEDS(2));
-                    gpioLEDS(3) <= not(gpioLEDS(3));
-                end if;
-            end if;  
+--            if encoders(4)(0) = '1' then
+--                if encoders(4)(1) = '1' then
+--                    gpioLEDS(0) <= not(gpioLEDS(0));
+--                    gpioLEDS(1) <= not(gpioLEDS(1));
+--                else
+--                    gpioLEDS(2) <= not(gpioLEDS(2));
+--                    gpioLEDS(3) <= not(gpioLEDS(3));
+--                end if;
+--            end if;  
             
 --            if encoders(5)(0) = '1' then
 --                if encoders(5)(1) = '1' then

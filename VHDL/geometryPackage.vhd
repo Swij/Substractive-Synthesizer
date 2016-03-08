@@ -21,6 +21,7 @@ function getFs (input : integer) return integer;
 function getInc (input : integer) return integer;
 function getSemiT (note : integer; semi : integer) return integer;
 function getSemiF (note : integer; semi : integer) return integer;
+function getSemiD (note : integer; semi : integer; duty : integer) return integer;
 --
 end geometryPackage;
 
@@ -43,55 +44,39 @@ package body geometryPackage is
 
     function getSemiT (note : integer; semi : integer) return integer is
     begin
-
-        if note = 0 and semi < 0 then           --  No return of low
-        
-            return T(0);
-            
-        elsif note = (romSize-1) and semi > 0 then   --  and no return of high...
-        
-            return T(romSize-1);
-            
+        if (semi > 0 and semi < 12) and note /= 95 then
+            return  (T(note) + (T(note) + T(note+1))/11*semi);
+        elsif (semi < 0 and semi > -12) and note /= 0 then
+            return  (T(note) - (T(note-1) + T(note))/11*semi);
         else
-            if semi < 0 and semi > -12 then     --  it is negative
-                
-                 return (T(note-1) - T(note)) / 12 * semi;
-            
-            else                                --  positive
-                
-                 return (T(note) - T(note+1)) / 12 * semi;
-                 
-            end if;
-            
+            return T(note);
         end if;
     end getSemiT;
 
-
     function getSemiF (note : integer; semi : integer) return integer is
     begin
-
-        if note = 0 and semi < 0 then                --  No return of low
-        
-            return F_s(0);
-            
-        elsif note = (romSize-1) and semi > 0 then   --  and no return of high...
-        
-            return F_s(romSize-1);
-            
+        if (semi > 0 and semi < 12) and note /= 95 then
+            return  (F_s(note) + (F_s(note) + F_s(note+1))/11*semi);
+        elsif (semi < 0 and semi > -12) and note /= 0 then
+            return  (F_s(note) - (F_s(note-1) + F_s(note))/11*semi);
         else
-        
-            if semi < 0 and semi > -12 then     --  it is negative
-                
-                 return (F_s(note-1) - F_s(note)) / 12 * (semi);
-            
-            else                                --  positive
-                
-                 return (F_s(note) - F_s(note+1)) / 12 * semi;
-                 
-            end if;
-            
+            return F_s(note);
         end if;
-        
     end getSemiF;
-        
+
+    function getSemiD (note : integer; semi : integer; duty : integer) return integer is
+    begin
+        if (duty > 0 and duty < 100) then
+            if (semi > 0 and semi < 12) and note /= 95 then
+                return (T(note) + (T(note) + T(note+1))/11*semi*100/duty);
+            elsif (semi < 0 and semi > -12) and note /= 0 then
+                return (T(note) - (T(note-1) + T(note))/11*semi*100/duty);
+            else
+                return T(note)/2;
+            end if;
+        else
+            return T(note)/2;
+        end if;
+    end getSemiD;
+            
 end geometryPackage;

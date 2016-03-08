@@ -7,7 +7,7 @@ package aids is
     type FILTER is (LP, HP, BP);
     
     -- Enumerator for oscillator-wave types
-    type WAVE is (SINE, COSINE, SQUARE, TRIANGLE, SAW1, SAW2, NOISE);
+    type WAVE is (SINE, COSINE, SQUARE, TRIANGLE, SAW1, SAW2, NOISE, NOISE2);
     
     -- STD_LOGIC_VECTOR to WAVE
     function to_wave (input : std_logic_vector(2 downto 0)) return WAVE;
@@ -397,7 +397,7 @@ package body aids is
             when "110" =>
                 output := NOISE;
             when others =>
-                output := NOISE;
+                output := NOISE2;
         end case;
         
         return output;

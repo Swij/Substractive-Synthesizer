@@ -48,11 +48,21 @@ architecture arch_oscillator of oscillator is
                reset : in STD_LOGIC;
                output : out STD_LOGIC_VECTOR(15 downto 0));
     end component;
+    
+    component LFSR_Fibonacci is
+        Generic ( WIDTH : NATURAL := 16;
+                  POLY_PAT : STD_LOGIC_VECTOR(15 downto 0) := "1011010000000000"; -- Changes depending on width!
+                  SEED : STD_LOGIC_VECTOR(15 downto 0) := "0000000000000001");
+        Port ( clk : in STD_LOGIC;
+               reset : in STD_LOGIC;
+               output : out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
+    end component;
 
     signal out_sin : STD_LOGIC_VECTOR (16 downto 0);
     signal out_cos : STD_LOGIC_VECTOR (16 downto 0);
     signal out_geo : STD_LOGIC_VECTOR (11 downto 0);
     signal out_noise : STD_LOGIC_VECTOR (15 downto 0);
+    signal out_noise2 : STD_LOGIC_VECTOR (15 downto 0);
 
 begin
 
@@ -64,6 +74,9 @@ geometry_comp: geometric
     
 LFSR_Galois_comp: LFSR_Galois
     port map ( clk, reset, out_noise);
+    
+LFSR_Fibonacci_comp: LFSR_Fibonacci
+    port map ( clk, reset, out_noise2);
 
 osc_process:
 process(reset, clk)
@@ -81,6 +94,8 @@ begin
                      output <= out_geo;
                 when NOISE =>
                     output <= out_noise(15 downto 4);
+                when NOISE2 =>
+                    output <= out_noise2(15 downto 4);
                 when others =>
                     output <= (OTHERS => '0');
             end case;        

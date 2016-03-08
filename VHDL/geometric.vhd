@@ -43,6 +43,8 @@ architecture arch_geometric of geometric is
     signal clkCnt  : integer range 0 to 2**31 - 1;
     signal noteReg : STD_LOGIC_VECTOR (7 downto 0);
     signal waveReg : WAVE;
+    signal dutyReg : STD_LOGIC_VECTOR (7 downto 0);
+    signal semiReg : STD_LOGIC_VECTOR (4 downto 0);
 
 begin
 
@@ -72,65 +74,66 @@ begin
 -------------------------------------------------------------------------------
 --      RESTART
 -------------------------------------------------------------------------------
-        if noteReg /= note or waveReg /= waveForm then
+        if noteReg /= note or waveReg /= waveForm or dutyReg /= dutyCycle or semiReg /= semi then
         
             noteReg <= note;
-            waveReg <= waveForm;             
+            waveReg <= waveForm;
+            dutyReg <= dutyCycle;
+            semiReg <= semi;
+                                   
             semit := to_integer(unsigned(semi));
-        
-            if semit = 0 then    
-                F_s <= getFs(to_integer(unsigned(note)));
-                F_s_clk <= 0;
-    
-            --  Square
-                if waveForm = SQUARE then    
-                    clkCnt <= 0;
-                    sum <= 0;
-                    T <= getT(to_integer(unsigned(note)));                
-                    duty <= getT(to_integer(unsigned(note))) / 100 * to_integer(unsigned(dutyCycle));                    
-                    squareWave <= ('0',OTHERS => '1');
-                    output <= squareWave;
-    
-            --  Triangle    
-                elsif waveForm = TRIANGLE then
-                --  Phase shift the clock
-                    clkCnt <= 0;    --getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/32;
-                    sum <= -2**(11)+1;
-                    T <= getT(to_integer(unsigned(note)));
-                    inc <= getInc(0);                    
-                    triangleState <= '1';                    
-                    triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,12));                  
-                    output <= triangleWave;
-                    
-            --  Saw
-                elsif waveForm = SAW1 then
-                    clkCnt <= 0;
-                    sum <= -2**(11)+1;
-                    T <= getT(to_integer(unsigned(note)));
-                    inc <= getInc(1);                    
-                    sawWave <= STD_LOGIC_VECTOR(to_signed(sum,12));
-                    output <= sawWave;
-                    
-                else --  waveForm = "11" then    
-                    clkCnt <= 0;
-                    sum <= 2**(11)-1;
-                    T <= getT(to_integer(unsigned(note)));
-                    inc <= getInc(1);                    
-                    sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,12));
-                    output <= sawWave;
-                    
-                end if;
+            clkCnt <= 0;--getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/32;
+            F_s_clk <= 0;
+            triangleState <= '1';
             
-            --  If negative semi
-            elsif semit < 0 and semit > -12 then 
-                
-                T <= 0;
-                
+            
             --  If positive semi    
-            elsif semit > 0 and semit < 12 then     
+--            if (semit > 0 and semit < 12) and note /= "01011111" then
+--                T    <= getSemiT(to_integer(unsigned(note)), to_integer(signed(semi)));
+--                F_s  <= getSemiF(to_integer(unsigned(note)), to_integer(signed(semi)));
+--                duty <= getSemiD(to_integer(unsigned(note)), to_integer(signed(semi)), to_integer(unsigned(dutyCycle)));
+--            elsif (semit < 0 and semit > -12) and note /= "00000000" then
+--                T    <= getSemiT(to_integer(unsigned(note)), to_integer(signed(semi)));
+--                F_s  <= getSemiF(to_integer(unsigned(note)), to_integer(signed(semi)));
+--                duty <= getSemiD(to_integer(unsigned(note)), to_integer(signed(semi)), to_integer(unsigned(dutyCycle)));
+--            else
+            --if semit = 0 then
+                T   <= getT(to_integer(unsigned(note)));
+                F_s <= getFs(to_integer(unsigned(note)));
                 
-                T <= getT(to_integer(unsigned(note)))-getT(to_integer(unsigned(note))+1)/12*semit;
+                if to_integer(unsigned(dutyCycle)) < 1 or to_integer(unsigned(dutyCycle)) > 99 then
+                    duty <= getT(to_integer(unsigned(note))) / 2;
+                else            
+                    duty <= getT(to_integer(unsigned(note))) / 100 * to_integer(unsigned(dutyCycle));
+                end if;
+--            end if;
             
+            --  Square
+            if waveForm = SQUARE then
+                sum <= 0;        
+                squareWave <= ('0',OTHERS => '1');
+                output <= squareWave;
+
+        --  Triangle    
+            elsif waveForm = TRIANGLE then
+                sum <= -2**(11)+1;
+                inc <= getInc(0);
+                triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,12));                  
+                output <= triangleWave;
+                
+        --  Saw
+            elsif waveForm = SAW1 then
+                sum <= -2**(11) + 1;
+                inc <= getInc(1);
+                sawWave <= STD_LOGIC_VECTOR(to_signed(sum,12));
+                output <= sawWave;
+                
+            else --  waveForm = "11" then
+                sum <= 2**(11) - 1;
+                inc <= getInc(1);
+                sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,12));
+                output <= sawWave;
+                
             end if;
                 
 -------------------------------------------------------------------------------
