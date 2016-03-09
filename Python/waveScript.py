@@ -295,7 +295,7 @@ def lfoWaves( ):
 	lfoSamplingFrequency = []
 	lfoIncrement = []
 
-	lfoFsFactor = 1000.0
+	lfoFsFactor = 177.0
 
 	# Step up with scientific pitches...
 	lfoMIN = -145
@@ -341,8 +341,8 @@ def lfoWaves( ):
 	print("\n\nLFO sampling frequencies periods\n")
 	print(lfoSamplingFrequency)
 
-	print("\n\nLFO incrementation at every sampling point\n")
-	print(lfoIncrement)
+	# print("\n\nLFO incrementation at every sampling point\n")
+	# print(lfoIncrement)
 
 	print("\n\nPeriods rewritten:\n")
 
@@ -362,9 +362,9 @@ def lfoWaves( ):
 		denumerators.append(int(lfoPeriods[i]/highMod))
 
 	
-	for i in range(len(lfoPeriods)):
+	# for i in range(len(lfoPeriods)):
 
-		print("%i = %i * %i"%(lfoPeriods[i],highestMods[i],denumerators[i]))
+	# 	print("%i = %i * %i"%(lfoPeriods[i],highestMods[i],denumerators[i]))
 
 
 def printMIDI( ):
@@ -393,9 +393,9 @@ def printMIDI( ):
 	
 def main( ):
 
-	geometricWaves(1)		# 0 = Detailed list, 1 = list form
+	#geometricWaves(1)		# 0 = Detailed list, 1 = list form
 	#sineWaves( )
-	#lfoWaves( )
+	lfoWaves( )
 	#printMIDI( )
 	#printOutErrors( )
 	#print(strings.cp)
