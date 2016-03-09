@@ -135,14 +135,12 @@ architecture arch_top of top is
                cutoff   : in integer;
                Q        : in sfixed(16 downto -F_WIDTH);
                x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-               y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-               finished : out STD_LOGIC);
+               y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
     end component;
 
     signal cutoff : integer := 1000;
     signal Q : sfixed(16 downto -12);
     signal ftype : FILTER := LP;
-    signal finished : STD_LOGIC;
     signal filterOut : STD_LOGIC_VECTOR(11 downto 0);
     signal filterIn  : STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
     
@@ -242,7 +240,7 @@ prescale_comp:component prescaler
     port map ( clk, preClk );
 
 IIR_comp:component IIR
-    port map ( preClk, clk, reset, ftype, cutoff, Q, filterIn, filterOut, finished );
+    port map ( preClk, clk, reset, ftype, cutoff, Q, filterIn, filterOut );
 
 DAC_comp:component AD5065_DAC
     port map( clk, reset, DACdata, DACstart, DACready, XADC_GPIO_1, XADC_GPIO_3, XADC_GPIO_2, XADC_GPIO_0 );

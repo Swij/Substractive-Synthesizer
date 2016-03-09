@@ -16,8 +16,7 @@ entity IIR is
           cutoff   : in integer;
           Q        : in sfixed(16 downto -F_WIDTH);
           x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-          y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-          finished : out STD_LOGIC);
+          y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
 end IIR;
 
 architecture arch_IIR of IIR is
