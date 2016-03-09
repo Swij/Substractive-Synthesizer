@@ -1,4 +1,7 @@
 library IEEE;
+library ieee_proposed;
+use ieee_proposed.fixed_float_types.all;
+use ieee_proposed.fixed_pkg.all;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.aids.ALL;
@@ -123,20 +126,21 @@ architecture arch_top of top is
      
     -- IIR filter component
     component IIR is
-        generic ( WIDTH : INTEGER:=12);
+        generic ( WIDTH : INTEGER := 12;
+                  F_WIDTH : INTEGER := 12);
         port ( clk      : STD_LOGIC;
                fclk     : STD_LOGIC;
                reset    : in STD_LOGIC;
                ftype    : FILTER;
                cutoff   : in integer;
-               Q        : in real;
+               Q        : in sfixed(16 downto -F_WIDTH);
                x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
                y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
                finished : out STD_LOGIC);
     end component;
 
     signal cutoff : integer := 1000;
-    constant Q : real := 0.7071;
+    signal Q : sfixed(16 downto -12);
     signal ftype : FILTER := LP;
     signal finished : STD_LOGIC;
     signal filterOut : STD_LOGIC_VECTOR(11 downto 0);
@@ -238,15 +242,7 @@ prescale_comp:component prescaler
     port map ( clk, preClk );
 
 IIR_comp:component IIR
-    port map ( preClk,
-     clk,
-      reset,
-       ftype, 
-       cutoff,
-        Q, 
-        filterIn, 
-        filterOut, 
-        finished );
+    port map ( preClk, clk, reset, ftype, cutoff, Q, filterIn, filterOut, finished );
 
 DAC_comp:component AD5065_DAC
     port map( clk, reset, DACdata, DACstart, DACready, XADC_GPIO_1, XADC_GPIO_3, XADC_GPIO_2, XADC_GPIO_0 );
@@ -272,9 +268,7 @@ DAC_comp:component AD5065_DAC
 
     --filterIn <= std_logic_vector(to_signed(to_integer(signed(oscOutput))+to_integer(signed(oscOutput2)), 13));
     filterIn <= output;
-
-
-
+    Q <= to_sfixed(0.7071, Q);
 
 top_process:
 process(clk)

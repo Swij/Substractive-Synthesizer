@@ -14,7 +14,7 @@ entity IIR is
           reset    : in STD_LOGIC;
           ftype    : FILTER;
           cutoff   : in integer;
-          Q        : in real;
+          Q        : in sfixed(16 downto -F_WIDTH);
           x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
           y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0);
           finished : out STD_LOGIC);
@@ -27,7 +27,6 @@ architecture arch_IIR of IIR is
     signal b0_LP, b1_LP, b0_HP, b1_HP, b0_BP, b1_BP : sfixed(WIDTH-1 downto -F_WIDTH);
     signal sinOut, cosOut : STD_LOGIC_VECTOR(16 downto 0);
     signal angle : STD_LOGIC_VECTOR(31 downto 0);
-    signal test : real;
     
     type SFParray is array(2 downto 0) of sfixed(WIDTH-1 downto -F_WIDTH);
     signal xs, ys : SFParray;
@@ -56,7 +55,7 @@ begin
     cos_fp <= shift_right(to_sfixed(signed(cosOut), cos_fp), 15);
     
     -- alpha = sin(w0)/(2*Q)
-    alpha <= resize(sin_fp/shift_left(to_sfixed(Q, sin_fp),1), alpha);
+    alpha <= resize(sin_fp/shift_left(Q,1), alpha);
     
     -- Filter coefficients
     -- a0, a1, a2
@@ -73,8 +72,6 @@ begin
     b1_BP <= (others => '0');
     -- b2
     b2 <= b0;
-    
-    test <= to_real(a1);
     
     with ftype select
         b0 <= b0_LP when LP,
