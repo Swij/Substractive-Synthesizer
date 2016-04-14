@@ -18,7 +18,7 @@ ENTITY MIDI_Decoder IS
 		
 		Data_out		: out STD_LOGIC_VECTOR(15 DOWNTO 0);
 		Data_send		: out STD_LOGIC;
-		Note_on			: out STD_LOGIC
+		Note_state_out	: out STD_LOGIC
 		--Note_off			: out STD_LOGIC;
 		--Command_reciever 	: out STD_LOGIC_VECTOR(7 DOWNTO 0);
 		--Command_out			: out STD_LOGIC_VECTOR(7 DOWNTO 0);
@@ -47,7 +47,7 @@ BEGIN
 		Data_out <= (OTHERS => '0');
 		--Command_out <= (OTHERS => '0');
 		Note_state <= '0';
-		Note_on <= '1';
+		Note_state_out <= '0';
 		MIDI_Decoder_state <= Idle;
 		Data_send <= '0';
 		
@@ -65,7 +65,7 @@ BEGIN
 			
 			IF (Data_ready = '1') THEN
 			
-				CASE Data_in(7 DOWNTO 4) IS
+				CASE Data_in(7 DOWNTO 4) IS						--Determines MIDI message type, more can be added
 			
 				WHEN "1000" =>
 					
@@ -91,9 +91,9 @@ BEGIN
 			
 			END IF;
 			
-		WHEN Recieve =>
+		WHEN Recieve =>											--Accumulates MIDI data bytes
 			
-			IF (Data_ready = '1') THEN
+			IF (Data_ready = '1') THEN					
 				
 				IF (Byte_cnt = 2) THEN
 				
@@ -104,15 +104,20 @@ BEGIN
 					
 					Data_acc(7 DOWNTO 0) <= Data_in;
 					Byte_cnt <= 0;
+					
+					--IF (Data_acc = "00000000") THEN
+					--	Note_state = 0;
+					--END IF;
+					
 					MIDI_Decoder_state <= Send;
 					
 				END IF;
 			END IF;
 				
-		WHEN Send =>
+		WHEN Send =>											--Sends MIDI Data
 			
 			Data_out <= Data_acc;
-			Note_on <= Note_state;
+			Note_state_out <= Note_state;
 			Data_send <= '1';
 			--Note_off <= NOT(Note_state);
 			

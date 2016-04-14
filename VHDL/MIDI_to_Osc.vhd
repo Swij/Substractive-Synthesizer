@@ -37,9 +37,7 @@ BEGIN
 				
 			ELSIF (Note_on='1') THEN
 				
-				Note_int <= TO_INTEGER(SIGNED(Data_in));
-				Note_int <= Note_int - 12;
-				Note <= STD_LOGIC_VECTOR(TO_UNSIGNED(Note_int,8));
+				Note <= Data_in(15 DOWNTO 8);
 				
 			END IF;
 		END IF;
