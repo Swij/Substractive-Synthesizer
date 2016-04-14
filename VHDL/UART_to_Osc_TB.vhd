@@ -8,17 +8,19 @@ END ENTITY;
 
 ARCHITECTURE UART_to_Osc_TB_arch OF UART_to_Osc_TB IS
 
-	SIGNAL MIDI_input_TB = std_logic;
-	SIGNAL Received_note_TB = std_logic_vector(7 DOWNTO 0);
-	SIGNAL Reset_TB = std_logic;
-	Signal Clock_TB = std_logic := '0';
+	SIGNAL MIDI_input_TB : std_logic;
+	SIGNAL Received_note_TB : std_logic_vector(7 DOWNTO 0);
+	SIGNAL Reset_TB : std_logic;
+	Signal Clock_TB : std_logic := '0';
 	
-	SIGNAL Uart_to_Dec_TB = std_logic_vector(7 DOWNTO 0);
-	SIGNAL Uart_to_Dec_Send_TB = std_logic;
+	SIGNAL Uart_to_Dec_TB : std_logic_vector(7 DOWNTO 0);
+	SIGNAL Uart_to_Dec_Send_TB : std_logic;
 	
-	SIGNAL Dec_to_int_TB = std_logic_vector(15 DOWNTO 0);
-	SIGNAL Dec_to_int_Send_TB = std_logic;
-	SIGNAL Dec_to_int_NoteState_TB = std_logic;
+	SIGNAL Dec_to_int_TB : std_logic_vector(15 DOWNTO 0);
+	SIGNAL Dec_to_int_Send_TB : std_logic;
+	SIGNAL Dec_to_int_NoteState_TB : std_logic;
+	
+	SIGNAL Clock_period : TIME;
 	
 	COMPONENT UART IS
 		PORT ( 
@@ -237,7 +239,7 @@ Test_proc:
 		REPORT ("Note should be off");	
 	
 	WAIT FOR Clock_period*2;
-		Reset_TB = '1';
+		Reset_TB <= '1';
 END PROCESS Test_proc;
 
 clk_proc:

@@ -47,7 +47,7 @@ BEGIN
 		Data_out <= (OTHERS => '0');
 		--Command_out <= (OTHERS => '0');
 		Note_state <= '0';
-		Note_on <= '1';
+		Note_state_out <= '0';
 		MIDI_Decoder_state <= Idle;
 		Data_send <= '0';
 		
