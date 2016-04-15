@@ -8,6 +8,7 @@ ENTITY MIDI_to_Osc IS
 		Note_on		: in STD_LOGIC;
 		Data_ready	: in STD_LOGIC;
 		Reset		: in STD_LOGIC;
+		Clock		: in STD_LOGIC;
 		
 		Note		: out STD_LOGIC_VECTOR(7 DOWNTO 0)
 	);
@@ -20,7 +21,7 @@ ARCHITECTURE MIDI_to_Osc_arch OF MIDI_to_Osc IS
 	
 BEGIN
 
-	PROCESS(Data_ready, Reset)
+	PROCESS(Clock, Reset)
 	BEGIN
 		
 		IF (Reset = '1') THEN

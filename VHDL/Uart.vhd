@@ -29,10 +29,10 @@ ARCHITECTURE Uart_Arch OF Uart IS
 	SIGNAL Uart_state : States;
 	SIGNAL Data_acc : STD_LOGIC_VECTOR(7 DOWNTO 0);
 	
-	SIGNAL Bit_counter : INTEGER RANGE 0 to 7;
+	SIGNAL Bit_counter : INTEGER RANGE 0 to 8;
 	
 BEGIN
-PROCESS(clk, Reset)
+PROCESS(Clock, Reset)
 
 	BEGIN
 	IF (RESET = '1') THEN							-- Asyncronous Reset of state and accumulated Data
@@ -71,6 +71,7 @@ PROCESS(clk, Reset)
 			
 		WHEN Send =>								-- Send the Accumulated byte to the MIDI Interface and revert to Idle state
 			
+			Bit_counter <= 0;
 			Data_out <= Data_acc;
 			Uart_state <= Idle;
 			Data_send <= '1';

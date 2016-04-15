@@ -60,7 +60,6 @@ BEGIN
 			Data_acc <= (OTHERS => '0');
 			Data_out <= (OTHERS => '0');
 			Byte_cnt <= 0;
-			Note_state <= '0';
 			Data_send <= '0';
 			
 			IF (Data_ready = '1') THEN
@@ -119,6 +118,7 @@ BEGIN
 			Data_out <= Data_acc;
 			Note_state_out <= Note_state;
 			Data_send <= '1';
+			MIDI_Decoder_State <= Idle;
 			--Note_off <= NOT(Note_state);
 			
 		END CASE;
