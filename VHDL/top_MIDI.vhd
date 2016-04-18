@@ -317,7 +317,7 @@ MIDI_to_osc_inst: COMPONENT MIDI_to_Osc
 	
 ClockEn_inst: COMPONENT ClockEnable
 	generic map(DesiredFreq => 31250, ClockFreq => 200000000)
-	port map(Clock, Reset, Clock_Enable);
+	port map(Clk, Reset, Clock_Enable);
 
 --------------------------------------------------------------------------------
 ----         GPIO     coupling
