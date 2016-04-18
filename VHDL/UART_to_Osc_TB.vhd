@@ -21,6 +21,7 @@ ARCHITECTURE UART_to_Osc_TB_arch OF UART_to_Osc_TB IS
 	SIGNAL Dec_to_int_NoteState_TB : std_logic;
 	
 	SIGNAL Clock_period : TIME;
+	SIGNAL Clock_Enable_TB: STD_LOGIC;
 	
 	COMPONENT Uart IS
 		PORT ( 
@@ -57,6 +58,15 @@ ARCHITECTURE UART_to_Osc_TB_arch OF UART_to_Osc_TB IS
 	);
 	END COMPONENT;
 	
+	COMPONENT ClockEnable IS
+		GENERIC(DesiredFreq := 31250);
+		PORT(
+			ClockIn 	: IN STD_LOGIC;
+			Reset		: IN STD_LOGIC;
+			ClockOut	: OUT STD_LOGIC
+		);
+	END COMPONENT;
+	
 BEGIN
 
 
@@ -66,7 +76,7 @@ PORT MAP(
 	Uart_to_Dec_TB,
 	Uart_to_Dec_Send_TB,
 	Reset_TB,
-	Clock_TB,
+	Clock_enable_TB,
 	Dec_to_int_TB,
 	Dec_to_int_Send_TB,
 	Dec_to_int_NoteState_TB
@@ -76,7 +86,7 @@ Uart_inst: Uart
 PORT MAP(
 	MIDI_input_TB,
 	Reset_TB,
-	Clock_TB,
+	Clock_enable_TB,
 	Uart_to_Dec_Send_TB,
 	Uart_to_Dec_TB
 	);
@@ -87,11 +97,19 @@ PORT MAP(
 	Dec_to_int_NoteState_TB,
 	Dec_to_int_Send_TB,
 	Reset_TB,
-	Clock_TB,
+	Clock_enable_TB,
 	Received_note_TB
 );
 
-Clock_period <= 32 ns;
+ClockEnable_inst : ClockEnable
+GENERIC MAP(31250);
+PORT MAP(
+		Clock_TB,
+		Reset_TB,
+		Clock_Enable_TB
+);
+
+Clock_period <= 32 us;
 	
 Test_proc:
 	PROCESS
@@ -253,7 +271,7 @@ clk_proc:
 	PROCESS
 	BEGIN
 	
-		WAIT FOR 16 ns;
+		WAIT FOR 2.5 ns;
 		Clock_tb<=NOT(Clock_tb);
 	
 	END PROCESS clk_proc;	
