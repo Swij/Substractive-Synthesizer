@@ -59,8 +59,7 @@ ARCHITECTURE UART_to_Osc_TB_arch OF UART_to_Osc_TB IS
 	END COMPONENT;
 	
 	COMPONENT ClockEnable IS
-		GENERIC(DesiredFreq : INTEGER;
-				ClockFreq : INTEGER);
+		GENERIC(DesiredFreq : INTEGER := 31250);
 		PORT(
 			ClockIn 	: IN STD_LOGIC;
 			Reset		: IN STD_LOGIC;
@@ -103,8 +102,7 @@ PORT MAP(
 );
 
 ClockEnable_inst : ClockEnable
-GENERIC MAP(DesiredFreq => 31250,
-			ClockFreq => 250000000)
+GENERIC MAP(DesiredFreq => 31250)
 PORT MAP(
 		Clock_TB,
 		Reset_TB,
@@ -266,8 +264,6 @@ Test_proc:
 	WAIT FOR Clock_period*3;
 		ASSERT (Received_note_TB = "00000000")
 		REPORT ("Note should be off");	
-	
-	WAIT FOR Clock_period*5;
 		Reset_TB <= '1';
 END PROCESS Test_proc;
 
@@ -275,7 +271,7 @@ clk_proc:
 	PROCESS
 	BEGIN
 	
-		WAIT FOR 2 ns;
+		WAIT FOR 2.5 ns;
 		Clock_tb<=NOT(Clock_tb);
 	
 	END PROCESS clk_proc;	

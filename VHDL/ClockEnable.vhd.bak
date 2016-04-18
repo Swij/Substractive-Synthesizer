@@ -3,8 +3,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.all;
 
 ENTITY ClockEnable IS
-	GENERIC(DesiredFreq : INTEGER := 31250;
-			ClockFreq : INTEGER := 200000000);
+	GENERIC(DesiredFreq : INTEGER := 31250);
 	PORT(
 		ClockIn 	: IN STD_LOGIC;
 		Reset		: IN STD_LOGIC;
@@ -16,6 +15,7 @@ ARCHITECTURE ClockEnable_ARCH of ClockEnable IS
 
 	SIGNAL Counter : INTEGER := 0;
 	SIGNAL CounterMax : INTEGER;
+	SIGNAL ClockFreq : INTEGER := 200000000;
 	SIGNAL ClockInt : STD_LOGIC := '0';
 	
 BEGIN
@@ -26,12 +26,12 @@ BEGIN
 	BEGIN
 		IF (Reset = '1') THEN
 			Counter <= 0;
-			ClockInt <= '0';
+			ClockOut <= '0';
 
 		ELSIF Rising_Edge(ClockIn) THEN
 			Counter <= Counter + 1;
 			
-			IF(Counter = CounterMax-1) THEN
+			IF(Counter = CounterMax) THEN
 				
 				ClockInt <= NOT(ClockInt);
 				Counter <= 0;
