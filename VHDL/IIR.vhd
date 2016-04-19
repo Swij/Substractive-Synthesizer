@@ -78,9 +78,9 @@ begin
               b0_BP when others;
 
     with ftype select
-        b1 <= b0_LP when LP,
-              b0_HP when HP,
-              b0_BP when others;
+        b1 <= b1_LP when LP,
+              b1_HP when HP,
+              b1_BP when others;
 
     -- Fixed point of input
     xf <= resize(to_sfixed(x, 11, 0),xf);

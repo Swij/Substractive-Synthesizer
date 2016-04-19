@@ -225,7 +225,7 @@ begin
     GPIO_DIP_SW2 <= '0';
     GPIO_DIP_SW1 <= '0';
     GPIO_DIP_SW0 <= '0';
-    wait for 100000 us;
+    wait for 4100 us;
     
 --    -- COSINE
 --    GPIO_DIP_SW2 <= '0';
@@ -233,7 +233,8 @@ begin
 --    GPIO_DIP_SW0 <= '1';
 --    wait for 1000 us;
     
-    assert false report "End of simulation" severity FAILURE;
+--    assert false report "End of simulation" severity FAILURE;
+      wait;
 end process;
 
 end Behavioral;

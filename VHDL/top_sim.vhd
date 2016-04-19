@@ -137,7 +137,7 @@ architecture arch_top of top_sim is
                y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
     end component;
     
-    signal cutoff : integer := 250;
+    signal cutoff : integer := 300;
     signal Q : sfixed(16 downto -12);
     signal ftype : FILTER := LP;
     signal filterOut : STD_LOGIC_VECTOR(11 downto 0);
@@ -185,6 +185,7 @@ begin
             note2 <= std_logic_vector(to_unsigned(95, 8));
             dutyCycle <= std_logic_vector(to_unsigned(50, 8));
             semi <= "00000";
+            ftype <= LP;
         else
             if GPIO_SW_N = '1' then -- Semi up
 
