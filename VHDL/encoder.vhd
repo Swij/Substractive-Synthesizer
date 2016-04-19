@@ -39,6 +39,9 @@ begin
         
     --elsif rising_edge(clk) then
     else
+    
+    	if C = '0' then btn <= '1'; else btn <= '0'; end if;
+    
         case curr_state is
             when IDLE =>
                 if B = '0' then

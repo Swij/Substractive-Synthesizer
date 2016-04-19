@@ -335,7 +335,7 @@ def lfoWaves( ):
 
 		r += 0.1
 
-	print("LFO periods\n")
+	print("%i LFO periods\n"%(len(lfoPeriods)))
 	print(lfoPeriods)
 
 	print("\n\nLFO sampling frequencies periods\n")
