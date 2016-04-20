@@ -106,7 +106,7 @@ architecture arch_top of top is
           waveForm  : in WAVE;
           note      : in STD_LOGIC_VECTOR (7 downto 0);
           semi      : in STD_LOGIC_VECTOR (4 downto 0);
-          dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
+          dutyCycle : in STD_LOGIC_VECTOR (6 downto 0);
           output    : out STD_LOGIC_VECTOR (11 downto 0));
     end component;
     
@@ -114,9 +114,10 @@ architecture arch_top of top is
     signal OSC1waveForm  : WAVE;
     signal OSC1note      : STD_LOGIC_VECTOR (7 downto 0);
     signal OSC1semi      : STD_LOGIC_VECTOR (4 downto 0);
-    signal OSC1dutyCycle : STD_LOGIC_VECTOR (7 downto 0);
+    signal OSC1dutyCycle : STD_LOGIC_VECTOR (6 downto 0);
     signal OSC1output    : STD_LOGIC_VECTOR (11 downto 0);
-
+    signal OSC1dutyCycleREG : integer range 0 to 127 := 50;
+    
     --  Encoder component
     component encoderTop is
     port( clk    : in STD_LOGIC;
@@ -129,11 +130,10 @@ architecture arch_top of top is
           btn    : out STD_LOGIC);
     end component;
 
-    signal change : STD_LOGIC;
-    signal dir    : STD_LOGIC;
-    signal btn    : STD_LOGIC;
     type   encoderArray is array (0 to 5) of std_logic_vector(2 downto 0);
     signal encoders : encoderArray;
+    
+    --type   encoder std_logic_vector(2 downto 0);
 
     --  Prescale component
     component prescaler is
@@ -159,7 +159,7 @@ architecture arch_top of top is
           y      : out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
     end component;
 
-    signal cutoff       : integer := 1000;
+    signal cutoff       : integer;
     signal Q            : sfixed(16 downto -12);
     signal ftype        : FILTER := LP;
     signal filterOut    : STD_LOGIC_VECTOR(11 downto 0);
@@ -211,16 +211,19 @@ architecture arch_top of top is
           reset    : in std_logic;
           enable   : in std_logic;
           rate     : in std_logic_vector (7 downto 0);
-          depth    : in std_logic_vector (4 downto 0);
+          depth    : in std_logic_vector (6 downto 0);
           waveForm : in std_logic;
           output   : out std_logic_vector (6 downto 0));
     end component;
     
     signal LFOduty_enable   : std_logic;
     signal LFOduty_rate     : std_logic_vector (7 downto 0);
-    signal LFOduty_depth    : std_logic_vector (4 downto 0);
+    signal LFOduty_depth    : std_logic_vector (6 downto 0);
     signal LFOduty_waveForm : std_logic;
     signal LFOduty_output   : std_logic_vector (6 downto 0);
+    signal LFOduty_setting  : std_logic;
+    signal LFOduty_rateReg  : integer range 0 to 255; -- std_logic_vector (7 downto 0);
+    signal LFOduty_depthReg : integer range 0 to 127; -- std_logic_vector (6 downto 0);
     
     --  LCD component
 --    component LCD is
@@ -250,7 +253,10 @@ architecture arch_top of top is
 
     --  Test signals and others...
     signal gpioLEDS   : std_logic_vector(3 downto 0);
-    
+    signal waveReg : integer range 0 to 7 := 0;
+    signal semiReg : integer range -11 to 11 := 0;
+    signal dutyReg : integer range 0 to 100 := 50;
+    signal cuttReg : integer range 0 to 5000 := 1000;    
        
 begin    
 
@@ -290,7 +296,11 @@ IIR_comp:component IIR
 
 DAC_comp:component AD5065_DAC
     port map( clk, reset, DACdata, DACstart, DACready, XADC_GPIO_1, XADC_GPIO_3, XADC_GPIO_2, XADC_GPIO_0 );
+    
+LFOduty_comp:component LFO_duty
+    port map( clk, reset, LFOduty_enable, LFOduty_rate, LFOduty_depth, LFOduty_waveForm, LFOduty_output );
 
+    
 --ASR_comp:component ASR
 --    port map( clk, reset, ASR_x, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
 
@@ -302,15 +312,23 @@ DAC_comp:component AD5065_DAC
 ---- GPIO coupling
 --------------------------------------------------------------------------------
 
-    --  Just all LEDs
+    --  LED
     GPIO_LED_0 <= gpioLEDS(0);
     GPIO_LED_1 <= gpioLEDS(1);
     GPIO_LED_2 <= gpioLEDS(2);
     GPIO_LED_3 <= gpioLEDS(3);
     
-    --  These are driving the encoders
-    FMC1_HPC_HA10_P <= '1';
-    FMC1_HPC_HA10_N <= '0';
+    --  ENCODERS
+    FMC1_HPC_HA10_P <= '1';  --  +
+    FMC1_HPC_HA10_N <= '0';  --  -
+    
+    --  FILTER
+    enablefilter <= GPIO_DIP_SW3;
+    
+    --  LFO DUTY
+    LFOduty_enable <= GPIO_DIP_SW2;
+    LFOduty_rate  <= std_logic_vector(to_unsigned(LFOduty_rateReg,8));
+    LFOduty_depth <= std_logic_vector(to_unsigned(LFOduty_depthReg,7));
     
     --  LCD Data signal
 --    FMC1_HPC_LA06_P <= LCD_E;
@@ -341,54 +359,61 @@ DAC_comp:component AD5065_DAC
     --filterIn <= std_logic_vector(to_signed(to_integer(signed(oscOutput))+to_integer(signed(oscOutput2)), 13));
     filterIn <= OSC1output;
     Q <= to_sfixed(0.7071, Q);
-    enablefilter <= GPIO_DIP_SW3;
-    OSC1enable <= '1';
 
+--    gpioLEDS(0) <= LCD_led(0);
+--    gpioLEDS(1) <= LCD_led(1);
+--    gpioLEDS(2) <= LCD_led(2);
+--    gpioLEDS(3) <= LCD_led(3);
+    
 top_process:
 process(clk)
-variable waveReg : integer range 0 to 7 := 0;
-variable semiReg : integer range -11 to 11 := 0;
-variable dutyReg : integer range 0 to 100 := 0;
-variable cuttReg : integer range 0 to 5000 := 0;
+--variable waveReg : integer range 0 to 7 := 0;
+--variable semiReg : integer range -11 to 11 := 0;
+--variable dutyReg : integer range 0 to 100 := 50;
+--variable cuttReg : integer range 0 to 5000 := 0;
 begin
 
     if rising_edge(clk) then
 
-    --  Reset when pushed
+    cutoff <= cuttReg;
+    
+    OSC1enable <= '1';
+    OSC1semi <= (OTHERS => '0');
+    OSC1waveForm <= to_wave(std_logic_vector(to_unsigned(waveReg,3)));
+    OSC1dutyCycle <= std_logic_vector(to_signed(dutyReg,7));
+    
+    
+    --  RESET
         if GPIO_SW_N = '1' then 
         
-            reset <= '0';            
+            reset <= '0';   
+                     
             gpioLEDS(0) <= '0';
             gpioLEDS(1) <= '0';
             gpioLEDS(2) <= '0';
             gpioLEDS(3) <= '0';
-            waveReg := 0;
+            
+            waveReg <= 0;
+            semiReg <= 0;
+            dutyReg <= 50;
+            
+            cuttReg <= 1000;
+            
+            LFOduty_rateReg  <=  0;     --  Lowest frequency
+            LFOduty_depthReg <= 50;     --  Starts at 6, to make it count to 50 => set to 44
+            LFOduty_waveForm <= '0';
+            LFOduty_setting  <= '0';
+            
+            OSC1dutyCycleREG <= 50;
             
         else
         
             reset <= '1';    
-             
---		    gpioLEDS(0) <= LCD_led(0);
---		    gpioLEDS(1) <= LCD_led(1);
---		    gpioLEDS(2) <= LCD_led(2);
---		    gpioLEDS(3) <= LCD_led(3);
-       
-                                          
---          LCD WRITE
---             if encoders(5)(2) = '1' then
---                 LCD_write <= '1';
---                 gpioLEDS(3) <= '1';
---             else
---                 LCD_write <= '0';
---                 gpioLEDS(3) <= '0';
---             end if;          
-                                                   
-  --          LCD WRITE
---            if encoders(4)(2) = '1' then
---                LCD_clear <= '1';
---            else
---                LCD_clear <= '0';
---            end if;            
+
+             if encoders(0)(2) = '1' then
+                 gpioLEDS(0) <= not(gpioLEDS(0));
+             end if;          
+
 
             --  NOTE
             if encoders(5)(0) = '1' then
@@ -411,18 +436,18 @@ begin
             if encoders(4)(0) = '1' then
                 if encoders(4)(1) = '1' then
                     if waveReg < 7 then
-                        waveReg := waveReg + 1;
+                        waveReg <= waveReg + 1;
                     else
-                        waveReg := 0;
+                        waveReg <= 0;
                     end if;    
                 else
                     if waveReg > 0 then
-                        waveReg := waveReg - 1;
+                        waveReg <= waveReg - 1;
                     else
-                        waveReg := 7;
+                        waveReg <= 7;
                     end if;    
                 end if;
-                OSC1waveForm <= to_wave(std_logic_vector(to_unsigned(waveReg,3)));
+                
             end if;
                         
             --  SEMI
@@ -443,24 +468,22 @@ begin
 --                end if;
 --                OSC1semi <= std_logic_vector(to_signed(semiReg,5));
 --            end if;
-            OSC1semi <= (OTHERS => '0');
             
             --  DUTY
             if encoders(2)(0) = '1' then
                 if encoders(2)(1) = '1' then
-                    if dutyReg < 98 then
-                        dutyReg := dutyReg + 1;
+                    if dutyReg < 94 then
+                        dutyReg <= dutyReg + 1;
                     else
-                        dutyReg := 98;
+                        dutyReg <= 94;
                     end if;                      
                 else
-                    if dutyReg > 2 then
-                        dutyReg := dutyReg - 1;
+                    if dutyReg > 6 then
+                        dutyReg <= dutyReg - 1;
                     else
-                        dutyReg := 2;
+                        dutyReg <= 6;
                     end if;    
                 end if;
-                OSC1dutyCycle <= std_logic_vector(to_signed(dutyReg,8));
             end if;
             --dutyCycle <= "00110010";
                
@@ -468,18 +491,17 @@ begin
             if encoders(1)(0) = '1' then
                 if encoders(1)(1) = '1' then
                     if cuttReg < 4901 then
-                        cuttReg := cuttReg + 100;
+                        cuttReg <= cuttReg + 100;
                     else
-                        cuttReg := 5000;
+                        cuttReg <= 5000;
                     end if;                      
                 else
                     if cuttReg > 99 then
-                        cuttReg := cuttReg - 100;
+                        cuttReg <= cuttReg - 100;
                     else
-                        cuttReg := 0;
+                        cuttReg <= 0;
                     end if;
                 end if;
-                cutoff <= cuttReg;
             end if;
             
         --  DAC               
@@ -498,18 +520,48 @@ begin
             else
                 DACstart <= '0';
             end if;
-
             
-            
-        --  LED
+        --  LFO1: Dutycycle for OSC1
             if encoders(0)(0) = '1' then
-                if encoders(0)(1) = '1' then
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                else
-                    gpioLEDS(2) <= not(gpioLEDS(2));
-                    gpioLEDS(3) <= not(gpioLEDS(3));
+                if encoders(0)(1) = '1' then            --  Decrease
+                    if LFOduty_setting = '0' then       --  Rate
+                        if LFOduty_rateReg > 0 then
+                            LFOduty_rateReg <= LFOduty_rateReg - 1;
+                        end if;
+                    else                                --  Depth
+                        if LFOduty_depthReg > 6 then
+                            LFOduty_depthReg <= LFOduty_depthReg - 1;
+                        end if;
+                    end if;
+                else                                    --  Increase
+                    if LFOduty_setting = '0' then       --  Rate
+                        if LFOduty_rateReg < 95 then
+                            LFOduty_rateReg <= LFOduty_rateReg + 1;
+                        end if;
+                    else                                --  Depth
+                        if LFOduty_depthReg < 94 then
+                            LFOduty_depthReg <= LFOduty_depthReg + 1;
+                        end if;
+                    end if;
                 end if;
-            end if;  
+            end if;
+            
+            if encoders(0)(2) = '1' then
+                LFOduty_setting <= not(LFOduty_setting);
+                gpioLEDS(0) <= not(gpioLEDS(0));
+            end if;
+            
+            if LFOduty_enable = '0' then
+                OSC1dutyCycle <= std_logic_vector(to_unsigned(dutyReg,7));
+            else
+                OSC1dutyCycle <= LFOduty_output;
+            end if;
+            
+            
+--            signal LFOduty_rate     : std_logic_vector (7 downto 0);
+--            signal LFOduty_depth    : std_logic_vector (4 downto 0);
+--            signal LFOduty_waveForm : std_logic;
+--            signal LFOduty_output   : std_logic_vector (6 downto 0);
                      
         end if;
     end if;

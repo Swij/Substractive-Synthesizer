@@ -24,7 +24,7 @@ architecture arch_encoderTop of encoderTop is
          C      : in STD_LOGIC;        
          change : out STD_LOGIC;
          dir    : out STD_LOGIC;
-         btn    : out STD_LOGIC);
+         bt    : out STD_LOGIC);
     end component;
     
     component debounce is 

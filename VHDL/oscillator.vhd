@@ -10,7 +10,7 @@ entity oscillator is
           waveForm  : in WAVE;
           note      : in STD_LOGIC_VECTOR (7 downto 0);
           semi      : in STD_LOGIC_VECTOR (4 downto 0);
-          dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
+          dutyCycle : in STD_LOGIC_VECTOR (6 downto 0);
           output    : out STD_LOGIC_VECTOR (11 downto 0)
     );
 end oscillator;
@@ -35,7 +35,7 @@ architecture arch_oscillator of oscillator is
           enable    : in STD_LOGIC;
           waveForm  : in WAVE;
           note      : in STD_LOGIC_VECTOR (7 downto 0);
-          dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
+          dutyCycle : in STD_LOGIC_VECTOR (6 downto 0);
           semi      : in STD_LOGIC_VECTOR (4 downto 0);
           output    : out STD_LOGIC_VECTOR (11 downto 0));
     end component;

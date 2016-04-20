@@ -8,9 +8,9 @@ entity encoder is
         A      : in STD_LOGIC;
         B      : in STD_LOGIC;
         C      : in STD_LOGIC;
-        change : out STD_LOGIC;
+        change    : out STD_LOGIC;
         dir    : out STD_LOGIC;
-        btn    : out STD_LOGIC
+        bt    : out STD_LOGIC
     );
 end encoder;
 
@@ -18,29 +18,67 @@ architecture arch_encoder of encoder is
 
     type stateType is (IDLE,R1,R2,R3,L1,L2,L3,RIGHT,LEFT);
     signal curr_state, next_state : stateType := IDLE;
-
+    
+    signal press : std_logic;    
+    --signal change : std_logic;    
+    --signal dir : std_logic;    
+    signal btn : std_logic;
+    signal btnCnt : integer range 0 to 20000000;
+    
 begin
 
 state_process: 
 process(clk)
 begin
-    if rising_edge(clk) then
+
+    
+    bt <= btn;
+    
+    if reset = '0' then
+        btn <= '0';
+        press <= '0';
+        btnCnt <= 0;
+        
+    elsif rising_edge(clk) then
+        
         curr_state <= next_state;
+        
+     	if C = '0' and press = '0' then
+            if btnCnt = 20000000 then
+                btnCnt <= 0;
+                btn <= '1'; 
+                press <= '1';
+            else
+                btnCnt <= btnCnt + 1;
+            end if;
+        else 
+            btn <= '0'; 
+            press <= '0';
+            btnCnt <= 0;
+        end if;
+        
+
+        
     end if;
+
 end process;
 
 encoder_process:
-process(reset, curr_state, A, B)
+process(clk, reset, curr_state, A, B)
 begin
-    
+
     if reset = '0' then
 
         next_state <= curr_state;
+        --press <= '0';
+        change <= '0';
+        dir <= '0';
+        --btn <= '0';
         
     --elsif rising_edge(clk) then
     else
     
-    	if C = '0' then btn <= '1'; else btn <= '0'; end if;
+
     
         case curr_state is
             when IDLE =>

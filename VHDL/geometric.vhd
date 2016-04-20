@@ -17,7 +17,7 @@ entity geometric is
 
         waveForm    : in WAVE;
         note        : in STD_LOGIC_VECTOR (7 downto 0);
-        dutyCycle   : in STD_LOGIC_VECTOR (7 downto 0);
+        dutyCycle   : in STD_LOGIC_VECTOR (6 downto 0);
         semi        : in STD_LOGIC_VECTOR (4 downto 0);
         
         output      : out STD_LOGIC_VECTOR (11 downto 0)
@@ -43,7 +43,7 @@ architecture arch_geometric of geometric is
     signal clkCnt  : integer range 0 to 2**31 - 1;
     signal noteReg : STD_LOGIC_VECTOR (7 downto 0);
     signal waveReg : WAVE;
-    signal dutyReg : STD_LOGIC_VECTOR (7 downto 0);
+    signal dutyReg : STD_LOGIC_VECTOR (6 downto 0);
     signal semiReg : STD_LOGIC_VECTOR (4 downto 0);
 
 begin
