@@ -103,7 +103,7 @@ PORT MAP(
 );
 
 ClockEnable_inst : ClockEnable
-GENERIC MAP(DesiredFreq => 31250,
+GENERIC MAP(DesiredFreq => 312500,
 			ClockFreq => 250000000)
 PORT MAP(
 		Clock_TB,
