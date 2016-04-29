@@ -149,7 +149,7 @@ Test_proc:
 		MIDI_input_TB <= '0';
 		
 	WAIT FOR Clock_period;
-		MIDI_input_TB <= '0';
+		MIDI_input_TB <= '1';
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
 	WAIT FOR Clock_period;

@@ -24,13 +24,14 @@ END Uart;
 
 ARCHITECTURE Uart_Arch OF Uart IS
 
-	TYPE States IS (Idle, Recieve, Send);
+	TYPE States IS (Idle, Synch, Recieve, Send, Sleep);
 	
 	SIGNAL Uart_state : States;
 	SIGNAL Data_acc : STD_LOGIC_VECTOR(7 DOWNTO 0);
 	
 	SIGNAL Bit_counter : INTEGER RANGE 0 to 8;
-	SIGNAL Scalar : INTEGER RANGE 0 to 11:=0;
+	SIGNAL Scalar : INTEGER RANGE 0 to 11 := 0;
+	SIGNAL Sample : INTEGER RANGE 0 to 11 := 0;
 	
 BEGIN
 PROCESS(Clock, Reset)
@@ -40,6 +41,7 @@ PROCESS(Clock, Reset)
 		
 		Uart_state <= Idle;							
 		Data_acc <= (OTHERS => '0');
+		Data_out <= (Others => '0');
 		Bit_counter <= 0;
 		Data_send <= '0';
 		Scalar <= 0;
@@ -53,19 +55,26 @@ PROCESS(Clock, Reset)
 			Data_send <= '0';
 			Bit_counter <= 0;
 			Scalar <= 0;
-			Data_out <= (OTHERS => '0');
+			Data_acc <= (Others => '0');
+
 			
 			IF (Data_in = '0') THEN
 				
-				Uart_state <= Recieve;
+				Uart_state <= Synch;
 				
 			END IF;
-		
-		WHEN Recieve =>								-- Accumulate 8 consecutive bits into one Byte
-		
+		WHEN Synch =>
 			Scalar <= Scalar + 1;
-			IF (Scalar = 10) THEN
+			IF (Scalar = 4) THEN 
+				Scalar <= 0;
+				Uart_state <= Recieve;
+			END IF;
 			
+		WHEN Recieve =>								-- Accumulate 8 consecutive bits into one Byte
+			Data_out <= (Others => '0');
+			Scalar <= Scalar + 1;
+			IF (Scalar = 9) THEN
+				
 				Data_acc(Bit_counter) <= Data_in;
 				Bit_counter <= Bit_counter + 1;
 				Scalar <= 0;
@@ -81,9 +90,17 @@ PROCESS(Clock, Reset)
 			Bit_counter <= 0;
 			Scalar <= 0;
 			Data_out <= Data_acc;
-			Uart_state <= Idle;
-			Data_send <= '1';
-		
+			Uart_state <= Sleep;
+			
+		WHEN Sleep =>
+			
+			Scalar <= Scalar + 1;
+			IF (Scalar = 9) THEN
+				Scalar <= 0;
+				Uart_state <= Idle;
+				Data_send <= '1';
+							
+			END IF;
 		END CASE;
 	END IF;
 END PROCESS;
