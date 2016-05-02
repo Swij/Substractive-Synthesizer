@@ -30,6 +30,7 @@ ARCHITECTURE Uart_Arch OF Uart IS
 	SIGNAL Data_acc : STD_LOGIC_VECTOR(7 DOWNTO 0);
 	
 	SIGNAL Bit_counter : INTEGER RANGE 0 to 8;
+	SIGNAL Scalar : INTEGER RANGE 0 to 11:=0;
 	
 BEGIN
 PROCESS(Clock, Reset)
@@ -41,6 +42,7 @@ PROCESS(Clock, Reset)
 		Data_acc <= (OTHERS => '0');
 		Bit_counter <= 0;
 		Data_send <= '0';
+		Scalar <= 0;
 	
 	ELSIF rising_edge(Clock) THEN					-- Triggering once every sent bit
 			
@@ -50,6 +52,7 @@ PROCESS(Clock, Reset)
 			
 			Data_send <= '0';
 			Bit_counter <= 0;
+			Scalar <= 0;
 			Data_out <= (OTHERS => '0');
 			
 			IF (Data_in = '0') THEN
@@ -59,19 +62,24 @@ PROCESS(Clock, Reset)
 			END IF;
 		
 		WHEN Recieve =>								-- Accumulate 8 consecutive bits into one Byte
+		
+			Scalar <= Scalar + 1;
+			IF (Scalar = 10) THEN
 			
-			Data_acc(Bit_counter) <= Data_in;
-			Bit_counter <= Bit_counter + 1;
-			
-			IF (Bit_counter = 7) THEN				-- Receive finished when Byte is full
+				Data_acc(Bit_counter) <= Data_in;
+				Bit_counter <= Bit_counter + 1;
+				Scalar <= 0;
+				IF (Bit_counter = 7) THEN				-- Receive finished when Byte is full
 				
-				Uart_state <= Send;
+					Uart_state <= Send;
 				
+				END IF;
 			END IF;
 			
 		WHEN Send =>								-- Send the Accumulated byte to the MIDI Interface and revert to Idle state
 			
 			Bit_counter <= 0;
+			Scalar <= 0;
 			Data_out <= Data_acc;
 			Uart_state <= Idle;
 			Data_send <= '1';
