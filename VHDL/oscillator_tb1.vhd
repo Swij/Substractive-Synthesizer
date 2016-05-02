@@ -17,7 +17,7 @@ architecture Behavioral of oscillator_tb1 is
           waveForm  : in WAVE;
           note      : in STD_LOGIC_VECTOR (7 downto 0);
           semi      : in STD_LOGIC_VECTOR (4 downto 0);
-          dutyCycle : in STD_LOGIC_VECTOR (7 downto 0);
+          dutyCycle : in STD_LOGIC_VECTOR (6 downto 0);
           output    : out STD_LOGIC_VECTOR (11 downto 0));
     end component;
     
@@ -28,7 +28,7 @@ architecture Behavioral of oscillator_tb1 is
     signal waveForm : WAVE;
     signal note : STD_LOGIC_VECTOR (7 downto 0);
     signal semi : STD_LOGIC_VECTOR (4 downto 0);
-    signal dutyCycle : STD_LOGIC_VECTOR (7 downto 0);
+    signal dutyCycle : STD_LOGIC_VECTOR (6 downto 0);
     
     -- Outputs
     signal output : STD_LOGIC_VECTOR (11 downto 0);
@@ -60,8 +60,9 @@ begin
     enable <= '0';
     waveForm <= SINE;
     note <= "01011111";
-    semi <= "00000";
-    dutyCycle <= "00110010";
+    --semi <= "01011";
+    semi <= "10101";
+    dutyCycle <= "0110010";
     
     wait for 10 ns;
 

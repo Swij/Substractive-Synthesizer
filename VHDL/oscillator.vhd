@@ -63,6 +63,10 @@ architecture arch_oscillator of oscillator is
     signal out_geo : STD_LOGIC_VECTOR (11 downto 0);
     signal out_noise : STD_LOGIC_VECTOR (15 downto 0);
     signal out_noise2 : STD_LOGIC_VECTOR (15 downto 0);
+    
+
+    
+
 
 begin
 
@@ -78,31 +82,31 @@ LFSR_Galois_comp: LFSR_Galois
 LFSR_Fibonacci_comp: LFSR_Fibonacci
     port map ( clk, reset, out_noise2);
 
-osc_process:
-process(reset, clk)
-begin
-    if reset = '0' then    
-        output <= (OTHERS => '0');        
-    elsif rising_edge(clk) then    
-        if enable = '1' then        
-            case waveForm is
-                when SINE => -- Sine
-                    output <= out_sin(15 downto 4);                
-                when COSINE => -- Cosine
-                    output <= out_cos(15 downto 4);                   
-                when SQUARE | TRIANGLE | SAW1 | SAW2 =>
-                     output <= out_geo;
-                when NOISE =>
-                    output <= out_noise(15 downto 4);
-                when NOISE2 =>
-                    output <= out_noise2(15 downto 4);
-                when others =>
-                    output <= (OTHERS => '0');
-            end case;        
-        else          
-            output <= (OTHERS => '0');
+    osc_process:
+    process(reset, clk)
+    begin
+        if reset = '0' then    
+            output <= (OTHERS => '0');        
+        elsif rising_edge(clk) then    
+            if enable = '1' then        
+                case waveForm is
+                    when SINE => -- Sine
+                        output <= out_sin(15 downto 4);                
+                    when COSINE => -- Cosine
+                        output <= out_cos(15 downto 4);                   
+                    when SQUARE | TRIANGLE | SAW1 | SAW2 =>
+                         output <= out_geo;
+                    when NOISE =>
+                        output <= out_noise(15 downto 4);
+                    when NOISE2 =>
+                        output <= out_noise2(15 downto 4);
+                    when others =>
+                        output <= (OTHERS => '0');
+                end case;        
+            else          
+                output <= (OTHERS => '0');
+            end if;
         end if;
-    end if;
-end process;
+    end process;
 
 end arch_oscillator;

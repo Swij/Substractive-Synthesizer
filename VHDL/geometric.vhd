@@ -45,7 +45,15 @@ architecture arch_geometric of geometric is
     signal waveReg : WAVE;
     signal dutyReg : STD_LOGIC_VECTOR (6 downto 0);
     signal semiReg : STD_LOGIC_VECTOR (4 downto 0);
+    
+    type stateType is (RESTART,SETUP,RUN);
+    signal curr_state : stateType := RESTART;
+    --signal next_state : stateType := RESTART;
 
+    signal setupCnt : integer range 0 to 255 := 0;
+    signal semiRegT : integer;
+    signal semiRegFs : integer; 
+    
 begin
 
 geometric_process:
@@ -69,34 +77,35 @@ begin
         noteReg <= (OTHERS => '0');
         waveReg <= TRIANGLE;
         
+        setupCnt <= 0;
+        
     elsif rising_edge(clk) then
 
--------------------------------------------------------------------------------
---      RESTART
--------------------------------------------------------------------------------
-        if noteReg /= note or waveReg /= waveForm or dutyReg /= dutyCycle or semiReg /= semi then
+        case curr_state is
+        
+        when RESTART =>
         
             noteReg <= note;
             waveReg <= waveForm;
             dutyReg <= dutyCycle;
             semiReg <= semi;
                                    
-            semit := to_integer(unsigned(semi));
+            semit := to_integer(signed(semi));
             clkCnt <= 0;--getT(to_integer(unsigned(note)))/2 - getT(to_integer(unsigned(note)))/32;
             F_s_clk <= 0;
             triangleState <= '1';
             
             
             --  If positive semi    
---            if (semit > 0 and semit < 12) and note /= "01011111" then
---                T    <= getSemiT(to_integer(unsigned(note)), to_integer(signed(semi)));
---                F_s  <= getSemiF(to_integer(unsigned(note)), to_integer(signed(semi)));
---                duty <= getSemiD(to_integer(unsigned(note)), to_integer(signed(semi)), to_integer(unsigned(dutyCycle)));
---            elsif (semit < 0 and semit > -12) and note /= "00000000" then
---                T    <= getSemiT(to_integer(unsigned(note)), to_integer(signed(semi)));
---                F_s  <= getSemiF(to_integer(unsigned(note)), to_integer(signed(semi)));
---                duty <= getSemiD(to_integer(unsigned(note)), to_integer(signed(semi)), to_integer(unsigned(dutyCycle)));
---            else
+            if (to_integer(signed(semi)) > 0 and to_integer(signed(semi)) < 12) and note /= "01011111" then
+                T    <= getSemiT(to_integer(unsigned(note)), to_integer(signed(semi)));
+                F_s  <= getSemiF(to_integer(unsigned(note)), to_integer(signed(semi)));
+                duty <= getSemiD(to_integer(unsigned(note)), to_integer(signed(semi)), to_integer(unsigned(dutyCycle)));
+            elsif (to_integer(signed(semi)) < 0 and to_integer(signed(semi)) > -12) and note /= "00000000" then
+                T    <= getSemiT(to_integer(unsigned(note)), to_integer(signed(semi)));
+                F_s  <= getSemiF(to_integer(unsigned(note)), to_integer(signed(semi)));
+                duty <= getSemiD(to_integer(unsigned(note)), to_integer(signed(semi)), to_integer(unsigned(dutyCycle)));
+            else
             --if semit = 0 then
                 T   <= getT(to_integer(unsigned(note)));
                 F_s <= getFs(to_integer(unsigned(note)));
@@ -106,7 +115,7 @@ begin
                 else            
                     duty <= getT(to_integer(unsigned(note))) / 100 * to_integer(unsigned(dutyCycle));
                 end if;
---            end if;
+            end if;
             
             --  Square
             if waveForm = SQUARE then
@@ -133,109 +142,110 @@ begin
                 inc <= getInc(1);
                 sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,12));
                 output <= sawWave;
-                
-            end if;
-                
--------------------------------------------------------------------------------
---
---      ENABLED
---
--------------------------------------------------------------------------------
-        elsif enable = '1' then
-
-        --  Counter increment
-            clkCnt <= clkCnt + 1;
-            F_s_clk <= F_s_clk + 1;
-
--------------------------------------------------------------------------------
---          Triangle + Square
--------------------------------------------------------------------------------
-            if waveForm = TRIANGLE or waveForm = SQUARE then
-                
-                ----------------------------------------------------------------
-                --  Set triangle state - down or up
-                ----------------------------------------------------------------
-                if clkCnt = T/2 then                    
-                    triangleState <= not triangleState;
-                    sum <= 2**(11)-1;                    
-                elsif clkCnt = T then                
-                    clkCnt <= 0;
-                    F_s_clk <= 0;
-                    squareWave <= not squareWave;
-                    triangleState <= not triangleState;
-                end if;
-                ----------------------------------------------------------------
-                --  Sample Increment
-                ----------------------------------------------------------------
-                if F_s_clk = F_s then                
-                    F_s_clk <= 0;                    
-                    if triangleState = '1' then                    
-                        sum <= sum + inc;                        
-                    else                    
-                        sum <= sum - inc;                        
-                    end if;                    
-                end if;
-                ----------------------------------------------------------------
-                --  Square wave
-                ----------------------------------------------------------------
-                if clkCnt = duty then                
-                    squareWave <= not squareWave;                    
-                end if;
-                
-                triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,12));                
-                
-                if waveForm = SQUARE then                
-                    output <= squareWave;                    
-                else                
-                    output <= triangleWave;
-                end if;
-                
--------------------------------------------------------------------------------
---          Saw
--------------------------------------------------------------------------------
-            elsif waveForm = SAW1 or waveForm = SAW2 then
-            
-                --  Set triangle down or up
-                if clkCnt = T then
-                
-                    F_s_clk <= 0;
-                    clkCnt <= 0;
-                    
-                    if waveForm = SAW1 then                    
-                        sum <= -2**(11);
-                    else
-                        sum <= 2**(11)-1;
-                    end if;
-                    
-                --  Increment
-                elsif F_s_clk = F_s then
-                
-                    F_s_clk <= 0;
-                    
-                    if waveForm = SAW1 then
-                        sum <= sum + inc;
-                    else
-                        sum <= sum - inc;
-                    end if;
-                
-                end if;
-                
-                sawWave <= STD_LOGIC_VECTOR(to_signed(sum,12));
-                output <= sawWave;--(17 downto 6);--18-1 to 18-12 = 17 to 6
-                
-                
--------------------------------------------------------------------------------
---          Off
--------------------------------------------------------------------------------              
-            else
-            
-                output <= (OTHERS => '0');
-            
+           
             end if;
             
-        end if;
+            curr_state <= SETUP;
+            
+        when SETUP =>
+            
+            if setupCnt = 200 
+            then curr_state <= RUN; setupCnt <= 0;
+            else curr_state <= RUN; setupCnt <= setupCnt + 1;
+            end if;
         
+        when RUN => 
+                    
+            if noteReg /= note or waveReg /= waveForm or dutyReg /= dutyCycle or semiReg /= semi 
+            then curr_state <= RESTART;
+            else curr_state <= RUN;
+            end if;
+            
+            if enable = '1' then
+    
+            --  Counter increment
+                clkCnt <= clkCnt + 1;
+                F_s_clk <= F_s_clk + 1;
+    
+                if waveForm = TRIANGLE or waveForm = SQUARE then
+                    
+                    --  Set triangle state - down or up
+                    if clkCnt = T/2 then                    
+                        triangleState <= not triangleState;
+                        sum <= 2**(11)-1;                    
+                    elsif clkCnt = T then                
+                        clkCnt <= 0;
+                        F_s_clk <= 0;
+                        squareWave <= not squareWave;
+                        triangleState <= not triangleState;
+                    end if;
+                    
+                    --  Sample Increment
+                    if F_s_clk = F_s then                
+                        F_s_clk <= 0;                    
+                        if triangleState = '1' 
+                        then sum <= sum + inc;                        
+                        else sum <= sum - inc;                        
+                        end if;                    
+                    end if;
+                    
+                    --  Square wave
+                    if clkCnt = duty then                
+                        squareWave <= not squareWave;                    
+                    end if;
+                    
+                    triangleWave <= STD_LOGIC_VECTOR(to_signed(sum,12));                
+                    
+                    if waveForm = SQUARE
+                    then output <= squareWave;                    
+                    else output <= triangleWave;
+                    end if;
+                    
+    
+    --          Saw
+                elsif waveForm = SAW1 or waveForm = SAW2 then
+                
+                    --  Set triangle down or up
+                    if clkCnt = T then
+                    
+                        F_s_clk <= 0;
+                        clkCnt <= 0;
+                        
+                        if waveForm = SAW1 then                    
+                            sum <= -2**(11);
+                        else
+                            sum <= 2**(11)-1;
+                        end if;
+                        
+                    --  Increment
+                    elsif F_s_clk = F_s then
+                    
+                        F_s_clk <= 0;
+                        
+                        if waveForm = SAW1 then
+                            sum <= sum + inc;
+                        else
+                            sum <= sum - inc;
+                        end if;
+                    
+                    end if;
+                    
+                    sawWave <= STD_LOGIC_VECTOR(to_signed(sum,12));
+                    output <= sawWave;--(17 downto 6);--18-1 to 18-12 = 17 to 6
+                    
+                    
+    -------------------------------------------------------------------------------
+    --          Off
+    -------------------------------------------------------------------------------              
+                else
+                
+                    output <= (OTHERS => '0');
+                
+                end if;
+        
+            end if;
+        end case;
     end if;
-    end process;
+end process;
     
 end arch_geometric;

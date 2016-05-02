@@ -51,9 +51,9 @@ package body geometryPackage is
     function getSemiT (note : integer; semi : integer) return integer is
     begin
         if (semi > 0 and semi < 12) and note /= 95 then
-            return  (T(note) + (T(note) + T(note+1))/11*semi);
+            return  (T(note) - (T(note) - T(note+1))/11*semi);
         elsif (semi < 0 and semi > -12) and note /= 0 then
-            return  (T(note) - (T(note-1) + T(note))/11*semi);
+            return  (T(note) - (T(note-1) - T(note))/11*semi);
         else
             return T(note);
         end if;
@@ -62,9 +62,9 @@ package body geometryPackage is
     function getSemiF (note : integer; semi : integer) return integer is
     begin
         if (semi > 0 and semi < 12) and note /= 95 then
-            return  (F_s(note) + (F_s(note) + F_s(note+1))/11*semi);
+            return  (F_s(note) - (F_s(note) - F_s(note+1))/11*semi);
         elsif (semi < 0 and semi > -12) and note /= 0 then
-            return  (F_s(note) - (F_s(note-1) + F_s(note))/11*semi);
+            return  (F_s(note) - (F_s(note-1) - F_s(note))/11*semi);
         else
             return F_s(note);
         end if;
@@ -74,9 +74,9 @@ package body geometryPackage is
     begin
         if (duty > 0 and duty < 100) then
             if (semi > 0 and semi < 12) and note /= 95 then
-                return (T(note) + (T(note) + T(note+1))/11*semi*100/duty);
+                return (T(note) - (T(note) - T(note+1))/11*semi/100*duty);
             elsif (semi < 0 and semi > -12) and note /= 0 then
-                return (T(note) - (T(note-1) + T(note))/11*semi*100/duty);
+                return (T(note) - (T(note-1) - T(note))/11*semi/100*duty);
             else
                 return T(note)/2;
             end if;
@@ -95,14 +95,16 @@ package body geometryPackage is
     function getLFOFs_Tri (rate : integer; depth : integer) return integer is
     begin
         
-        return LFO(rate)/2/depth;
+            --return LFO(rate)/(2*depth);
+            return LFO(rate)/(depth);
         
     end getLFOFs_Tri;
                 
     function getLFOFs_Saw (rate : integer; depth : integer) return integer is
     begin
         
-        return LFO(rate)/depth;
+            --return LFO(rate)/(depth+1);
+            return LFO(rate)/(depth);
         
     end getLFOFs_Saw;
     

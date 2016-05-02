@@ -112,7 +112,7 @@ architecture arch_top of top is
     
     signal OSC1enable    : STD_LOGIC;
     signal OSC1waveForm  : WAVE;
-    signal OSC1note      : STD_LOGIC_VECTOR (7 downto 0);
+    signal OSC1note      : STD_LOGIC_VECTOR (7 downto 0) := "01010101";
     signal OSC1semi      : STD_LOGIC_VECTOR (4 downto 0);
     signal OSC1dutyCycle : STD_LOGIC_VECTOR (6 downto 0);
     signal OSC1output    : STD_LOGIC_VECTOR (11 downto 0);
@@ -209,6 +209,7 @@ architecture arch_top of top is
     component LFO_duty is
     port( clk      : in std_logic;
           reset    : in std_logic;
+          restart  : in std_logic;
           enable   : in std_logic;
           rate     : in std_logic_vector (7 downto 0);
           depth    : in std_logic_vector (6 downto 0);
@@ -216,14 +217,15 @@ architecture arch_top of top is
           output   : out std_logic_vector (6 downto 0));
     end component;
     
+    signal LFOduty_restart  : std_logic;
     signal LFOduty_enable   : std_logic;
     signal LFOduty_rate     : std_logic_vector (7 downto 0);
     signal LFOduty_depth    : std_logic_vector (6 downto 0);
     signal LFOduty_waveForm : std_logic;
     signal LFOduty_output   : std_logic_vector (6 downto 0);
     signal LFOduty_setting  : std_logic;
-    signal LFOduty_rateReg  : integer range 0 to 255; -- std_logic_vector (7 downto 0);
-    signal LFOduty_depthReg : integer range 0 to 127; -- std_logic_vector (6 downto 0);
+    signal LFOduty_rateReg  : integer range 0 to 255 := 198; -- std_logic_vector (7 downto 0);
+    signal LFOduty_depthReg : integer range 0 to 127 := 50; -- std_logic_vector (6 downto 0);
     
     --  LCD component
 --    component LCD is
@@ -298,7 +300,7 @@ DAC_comp:component AD5065_DAC
     port map( clk, reset, DACdata, DACstart, DACready, XADC_GPIO_1, XADC_GPIO_3, XADC_GPIO_2, XADC_GPIO_0 );
     
 LFOduty_comp:component LFO_duty
-    port map( clk, reset, LFOduty_enable, LFOduty_rate, LFOduty_depth, LFOduty_waveForm, LFOduty_output );
+    port map( clk, reset, LFOduty_restart,  LFOduty_enable, LFOduty_rate, LFOduty_depth, LFOduty_waveForm, LFOduty_output );
 
     
 --ASR_comp:component ASR
@@ -318,22 +320,33 @@ LFOduty_comp:component LFO_duty
     GPIO_LED_2 <= gpioLEDS(2);
     GPIO_LED_3 <= gpioLEDS(3);
     
+    gpioLEDS(0) <= LFOduty_setting;
     --  ENCODERS
     FMC1_HPC_HA10_P <= '1';  --  +
-    FMC1_HPC_HA10_N <= '0';  --  -
+    FMC1_HPC_HA10_N <= '0';  --  -;
+
     
     --  FILTER
     enablefilter <= GPIO_DIP_SW3;
-    
+    cutoff <= cuttReg;   
+    --filterIn <= std_logic_vector(to_signed(to_integer(signed(oscOutput))+to_integer(signed(oscOutput2)), 13));
+    filterIn <= OSC1output;
+    Q <= to_sfixed(0.7071, Q);
+        
     --  LFO DUTY
     LFOduty_enable <= GPIO_DIP_SW2;
     LFOduty_rate  <= std_logic_vector(to_unsigned(LFOduty_rateReg,8));
     LFOduty_depth <= std_logic_vector(to_unsigned(LFOduty_depthReg,7));
     
+    --  OSCILLATOR 1
+    OSC1enable <= '1'; 
+    OSC1waveForm <= to_wave(std_logic_vector(to_unsigned(waveReg,3)));
+    --OSC1dutyCycle <= std_logic_vector(to_signed(dutyReg,7));
+    OSC1semi <= std_logic_vector(to_signed(semiReg,5));
+    
     --  LCD Data signal
 --    FMC1_HPC_LA06_P <= LCD_E;
---    FMC1_HPC_LA06_N <= LCD_RW;
---    FMC1_HPC_LA07_P <= LCD_RS ;
+--    FMC1_HPC_LA06_N <= LCD_RW--    FMC1_HPC_LA07_P <= LCD_RS ;
         
 --    FMC1_HPC_LA05_N <= LCD_DATA(0);
 --    FMC1_HPC_LA05_P <= LCD_DATA(1);
@@ -356,9 +369,7 @@ LFOduty_comp:component LFO_duty
 ---- Constant signals
 --------------------------------------------------------------------------------
 
-    --filterIn <= std_logic_vector(to_signed(to_integer(signed(oscOutput))+to_integer(signed(oscOutput2)), 13));
-    filterIn <= OSC1output;
-    Q <= to_sfixed(0.7071, Q);
+
 
 --    gpioLEDS(0) <= LCD_led(0);
 --    gpioLEDS(1) <= LCD_led(1);
@@ -375,143 +386,54 @@ begin
 
     if rising_edge(clk) then
 
-    cutoff <= cuttReg;
-    
-    OSC1enable <= '1';
-    OSC1semi <= (OTHERS => '0');
-    OSC1waveForm <= to_wave(std_logic_vector(to_unsigned(waveReg,3)));
-    OSC1dutyCycle <= std_logic_vector(to_signed(dutyReg,7));
+    --OSC1semi <= (OTHERS => '0');
+
     
     
-    --  RESET
+        --  RESET
         if GPIO_SW_N = '1' then 
         
             reset <= '0';   
                      
-            gpioLEDS(0) <= '0';
+            --gpioLEDS(0) <= '0';
             gpioLEDS(1) <= '0';
             gpioLEDS(2) <= '0';
             gpioLEDS(3) <= '0';
             
-            waveReg <= 0;
-            semiReg <= 0;
-            dutyReg <= 50;
+            --waveReg <= 0;
+            --semiReg <= 0;
+            --dutyReg <= 50;
             
-            cuttReg <= 1000;
+            --cuttReg <= 1000;
             
-            LFOduty_rateReg  <=  0;     --  Lowest frequency
-            LFOduty_depthReg <= 50;     --  Starts at 6, to make it count to 50 => set to 44
-            LFOduty_waveForm <= '0';
-            LFOduty_setting  <= '0';
+--            LFOduty_rateReg  <=  0;     --  Lowest frequency
+--            LFOduty_depthReg <= 50;     --  Starts at 6, to make it count to 50 => set to 44
+--            LFOduty_waveForm <= '0';
+--            LFOduty_setting  <= '0';
             
-            OSC1dutyCycleREG <= 50;
+            --OSC1dutyCycleREG <= 50;
             
         else
         
             reset <= '1';    
 
-             if encoders(0)(2) = '1' then
-                 gpioLEDS(0) <= not(gpioLEDS(0));
-             end if;          
+             --if encoders(0)(2) = '1' then
+                 --gpioLEDS(0) <= LFOduty_setting;
+             --end if;          
 
 
-            --  NOTE
-            if encoders(5)(0) = '1' then
-                if encoders(5)(1) = '1' then
-                    if unsigned(OSC1note) < 95 then
-                        OSC1note <= std_logic_vector(unsigned(OSC1note) + 1);
-                    else
-                        OSC1note <= std_logic_vector(to_unsigned(95,8));
-                    end if;    
-                else
-                    if unsigned(OSC1note) > 0 then
-                        OSC1note <= std_logic_vector(unsigned(OSC1note) - 1);
-                    else
-                        OSC1note <= (OTHERS => '0');
-                    end if;    
-                end if;
-            end if;
-            
-            --  WAVE, 000=Sine, 001=Cosine, 010=Square, 011=Triangle, 100=Saw1, 101=Saw2, 110=Saw1, 111=Saw2
-            if encoders(4)(0) = '1' then
-                if encoders(4)(1) = '1' then
-                    if waveReg < 7 then
-                        waveReg <= waveReg + 1;
-                    else
-                        waveReg <= 0;
-                    end if;    
-                else
-                    if waveReg > 0 then
-                        waveReg <= waveReg - 1;
-                    else
-                        waveReg <= 7;
-                    end if;    
-                end if;
-                
-            end if;
-                        
-            --  SEMI
---            if encoders(3)(0) = '1' then
---                if encoders(3)(1) = '1' then--increase
---                    if semiReg < 11 then
---                        semiReg := semiReg + 1;
---                    else
---                        semiReg := 11;
-                        
---                    end if;                      
---                else
---                    if semiReg > -11 then
---                        semiReg := semiReg - 1;
---                    else
---                        semiReg := -11;
---                    end if;    
---                end if;
---                OSC1semi <= std_logic_vector(to_signed(semiReg,5));
---            end if;
-            
-            --  DUTY
-            if encoders(2)(0) = '1' then
-                if encoders(2)(1) = '1' then
-                    if dutyReg < 94 then
-                        dutyReg <= dutyReg + 1;
-                    else
-                        dutyReg <= 94;
-                    end if;                      
-                else
-                    if dutyReg > 6 then
-                        dutyReg <= dutyReg - 1;
-                    else
-                        dutyReg <= 6;
-                    end if;    
-                end if;
-            end if;
-            --dutyCycle <= "00110010";
-               
-            --  CUTTOFF
-            if encoders(1)(0) = '1' then
-                if encoders(1)(1) = '1' then
-                    if cuttReg < 4901 then
-                        cuttReg <= cuttReg + 100;
-                    else
-                        cuttReg <= 5000;
-                    end if;                      
-                else
-                    if cuttReg > 99 then
-                        cuttReg <= cuttReg - 100;
-                    else
-                        cuttReg <= 0;
-                    end if;
-                end if;
-            end if;
             
         --  DAC               
             if preClk = '1' then
                 --if DACready = '1' then
-                    DACdata(3 downto 0) <= (OTHERS => '0');
+                    --DACdata(3 downto 0) <= (OTHERS => '0');
                     if enablefilter = '1' then
-                        DACdata(15 downto 4) <= std_logic_vector(signed(filterOut) + 2048);
+                        --DACdata(15 downto 4) <= std_logic_vector(signed(filterOut) + 2048);
+                        DACdata(15 downto 9) <= LFOduty_output;
+                        DACdata(8 downto 0) <= (OTHERS => '0');
                     else
                         DACdata(15 downto 4) <= std_logic_vector(signed(OSC1output) + 2048);
+                        DACdata(3 downto 0) <= "0000";
                     end if;
                     DACstart <= '1';
                 --else
@@ -520,42 +442,14 @@ begin
             else
                 DACstart <= '0';
             end if;
+
             
-        --  LFO1: Dutycycle for OSC1
-            if encoders(0)(0) = '1' then
-                if encoders(0)(1) = '1' then            --  Decrease
-                    if LFOduty_setting = '0' then       --  Rate
-                        if LFOduty_rateReg > 0 then
-                            LFOduty_rateReg <= LFOduty_rateReg - 1;
-                        end if;
-                    else                                --  Depth
-                        if LFOduty_depthReg > 6 then
-                            LFOduty_depthReg <= LFOduty_depthReg - 1;
-                        end if;
-                    end if;
-                else                                    --  Increase
-                    if LFOduty_setting = '0' then       --  Rate
-                        if LFOduty_rateReg < 95 then
-                            LFOduty_rateReg <= LFOduty_rateReg + 1;
-                        end if;
-                    else                                --  Depth
-                        if LFOduty_depthReg < 94 then
-                            LFOduty_depthReg <= LFOduty_depthReg + 1;
-                        end if;
-                    end if;
-                end if;
-            end if;
+--            if encoders(0)(2) = '1' then
+--                LFOduty_setting <= not(LFOduty_setting);
+--                gpioLEDS(0) <= not(gpioLEDS(0));
+--            end if;
             
-            if encoders(0)(2) = '1' then
-                LFOduty_setting <= not(LFOduty_setting);
-                gpioLEDS(0) <= not(gpioLEDS(0));
-            end if;
-            
-            if LFOduty_enable = '0' then
-                OSC1dutyCycle <= std_logic_vector(to_unsigned(dutyReg,7));
-            else
-                OSC1dutyCycle <= LFOduty_output;
-            end if;
+
             
             
 --            signal LFOduty_rate     : std_logic_vector (7 downto 0);
@@ -566,5 +460,206 @@ begin
         end if;
     end if;
     
-end process;    
+end process;
+
+enc_cut_process:
+process(clk)
+begin
+
+    if GPIO_SW_N = '1' then
+    
+        cuttReg <= 1000;
+        
+    elsif rising_edge(clk) then
+    
+        --  CUTTOFF
+        if encoders(1)(0) = '1' then
+            if encoders(1)(1) = '1' then
+                if cuttReg < 4901 then
+                    cuttReg <= cuttReg + 100;
+                else
+                    cuttReg <= 5000;
+                end if;                      
+            else
+                if cuttReg > 99 then
+                    cuttReg <= cuttReg - 100;
+                else
+                    cuttReg <= 0;
+                end if;
+            end if;
+        end if;
+    end if;
+end process;
+
+enc_duty_process:
+process(clk)
+begin
+
+    if GPIO_SW_N = '1' then
+    
+        dutyReg <= 50;
+        
+    elsif rising_edge(clk) then
+        --  DUTY
+        if encoders(2)(0) = '1' then
+            if encoders(2)(1) = '1' then
+                if dutyReg < 94 then
+                    dutyReg <= dutyReg + 1;
+                else
+                    dutyReg <= 94;
+                end if;                      
+            else
+                if dutyReg > 6 then
+                    dutyReg <= dutyReg - 1;
+                else
+                    dutyReg <= 6;
+                end if;    
+            end if;
+        end if;
+        --dutyCycle <= "00110010";
+    end if;
+end process;
+
+enc_semi_process:
+process(clk)
+begin
+
+    if GPIO_SW_N = '1' then
+    
+        semiReg <= 0;
+        
+    elsif rising_edge(clk) then
+            --  SEMI
+        if encoders(3)(0) = '1' then
+            if encoders(3)(1) = '1' then--increase
+                if semiReg < 11 then
+                    semiReg <= semiReg + 1;
+                else
+                    semiReg <= 11;
+                    
+                end if;                      
+            else
+                if semiReg > -11 then
+                    semiReg <= semiReg - 1;
+                else
+                    semiReg <= -11;
+                end if;    
+            end if;
+        end if;
+    end if;
+end process;
+
+enc_wave_process:
+process(clk)
+begin
+
+    if GPIO_SW_N = '1' then
+    
+        waveReg <= 0;
+        
+    elsif rising_edge(clk) then
+        --  WAVE, 000=Sine, 001=Cosine, 010=Square, 011=Triangle, 100=Saw1, 101=Saw2, 110=Saw1, 111=Saw2
+        if encoders(4)(0) = '1' then
+            if encoders(4)(1) = '1' then
+                if waveReg < 7 then
+                    waveReg <= waveReg + 1;
+                else
+                    waveReg <= 0;
+                end if;    
+            else
+                if waveReg > 0 then
+                    waveReg <= waveReg - 1;
+                else
+                    waveReg <= 7;
+                end if;    
+            end if;
+        end if;
+    end if;
+            
+end process;
+
+enc_note_process:
+process(clk)
+begin    --  RESET
+    if GPIO_SW_N = '1' then
+    
+        OSC1note <= "01010101";
+        
+    elsif rising_edge(clk) then
+    
+        if encoders(5)(0) = '1' then
+            if encoders(5)(1) = '1' then
+                if unsigned(OSC1note) < 95 then
+                    OSC1note <= std_logic_vector(unsigned(OSC1note) + 1);
+                else
+                    OSC1note <= std_logic_vector(to_unsigned(95,8));
+                end if;    
+            else
+                if unsigned(OSC1note) > 0 then
+                    OSC1note <= std_logic_vector(unsigned(OSC1note) - 1);
+                else
+                    OSC1note <= (OTHERS => '0');
+                end if;    
+            end if;
+        end if;
+    end if;
+end process;        
+        
+LFO1_process:
+process(clk)
+begin    --  RESET
+    if GPIO_SW_N = '1' then 
+    
+        LFOduty_rateReg  <=  0;     --  Lowest frequency
+        LFOduty_depthReg <= 50;     --  Starts at 6, to make it count to 50 => set to 44
+        LFOduty_waveForm <= '0';
+        LFOduty_setting  <= '0';
+        
+    elsif rising_edge(clk) then
+    
+        LFOduty_waveForm <= '0';
+        
+        --  LFO1: Dutycycle for OSC1
+        if encoders(0)(0) = '1' then
+            if encoders(0)(1) = '1' then            --  Increase
+                if LFOduty_setting = '0' then       --  Rate
+                    if LFOduty_rateReg < 198 then
+                        LFOduty_rateReg <= LFOduty_rateReg + 1;
+                        LFOduty_restart <= '1';
+                    end if;
+                else                                --  Depth
+                    if LFOduty_depthReg < 88 then
+                        LFOduty_depthReg <= LFOduty_depthReg + 1;
+                        LFOduty_restart <= '1';
+                    end if;
+                end if;
+            else                                    --  Decrease
+                if LFOduty_setting = '0' then       --  Rate
+                    if LFOduty_rateReg > 0 then
+                        LFOduty_rateReg <= LFOduty_rateReg - 1;
+                        LFOduty_restart <= '1';
+                    end if;
+                else                                --  Depth
+                    if LFOduty_depthReg > 6 then
+                        LFOduty_depthReg <= LFOduty_depthReg - 1;
+                        LFOduty_restart <= '1';
+                    end if;
+                end if;
+            end if;
+        else
+            LFOduty_restart <= '0';
+        end if;
+        
+        if encoders(0)(2) = '1' then
+            LFOduty_setting <= not(LFOduty_setting);
+        end if;
+        
+        if LFOduty_enable = '0' then
+            OSC1dutyCycle <= std_logic_vector(to_unsigned(dutyReg,7));
+        else
+            OSC1dutyCycle <= LFOduty_output;
+        end if;
+            
+    end if;
+end process;
 end arch_top;
