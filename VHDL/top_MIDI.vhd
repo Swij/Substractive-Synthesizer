@@ -316,7 +316,7 @@ MIDI_to_osc_inst: COMPONENT MIDI_to_Osc
 	port map(Note_data, Note_state, Note_ready, Reset, Clock_Enable, Note_out);
 	
 ClockEn_inst: COMPONENT ClockEnable
-	generic map(DesiredFreq => 31250, ClockFreq => 200000000)
+	generic map(DesiredFreq => 312500, ClockFreq => 200000000)
 	port map(Clk, Reset, Clock_Enable);
 
 --------------------------------------------------------------------------------
@@ -328,7 +328,7 @@ ClockEn_inst: COMPONENT ClockEnable
     GPIO_LED_1 <= gpioLEDS(1);
     GPIO_LED_2 <= gpioLEDS(2);
     GPIO_LED_3 <= gpioLEDS(3);
-
+	gpioLEDS <= Uart_Dec(3 DOWNTO 0);
     --  These are driving the encoders
     FMC1_HPC_HA10_P <= '1';
     FMC1_HPC_HA10_N <= '0';
@@ -353,8 +353,8 @@ begin
             reset <= '0';            
             gpioLEDS(0) <= '0';
             gpioLEDS(1) <= '0';
-            gpioLEDS(2) <= '1';
-            gpioLEDS(3) <= '1';
+            gpioLEDS(2) <= '0';
+            gpioLEDS(3) <= '0';
             waveReg := 0;
             
         else
@@ -469,15 +469,15 @@ begin
             
         --  ENCODER PCB
             
-            if encoders(0)(0) = '1' then
-                if encoders(0)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                else
-                    gpioLEDS(2) <= not(gpioLEDS(2));
-                    gpioLEDS(3) <= not(gpioLEDS(3));
-                end if;
-            end if;  
+            --if encoders(0)(0) = '1' then
+              --  if encoders(0)(1) = '1' then
+                --    gpioLEDS(0) <= not(gpioLEDS(0));
+                  --  gpioLEDS(1) <= not(gpioLEDS(1));
+                --else
+                 --   gpioLEDS(2) <= not(gpioLEDS(2));
+                   -- gpioLEDS(3) <= not(gpioLEDS(3));
+                --end if;
+            --end if;  
             
 --            if encoders(1)(0) = '1' then
 --                if encoders(1)(1) = '1' then
