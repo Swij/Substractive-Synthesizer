@@ -31,17 +31,19 @@ begin
         btnCnt <= 0;
         
     elsif rising_edge(clk) then
-    
-        if btn_in = '0' and press = '0' then
+
+        if btn_in = '1' and press = '0' then
             if btnCnt = 20000000 then
                 btnCnt <= 0;
-                btn <= '1'; 
+                btn <= '1';
                 press <= '1';
             else
                 btnCnt <= btnCnt + 1;
             end if;
-        else 
-            btn <= '0'; 
+        elsif btn_in = '1' and press = '1' then
+            btn <= '1';
+        else
+            btn <= '0';
             press <= '0';
             btnCnt <= 0;
         end if;
