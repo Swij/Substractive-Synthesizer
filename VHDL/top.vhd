@@ -47,7 +47,7 @@ entity top is
         XADC_GPIO_2 : out std_logic;  --  DIN
         XADC_GPIO_3 : out std_logic;  --  SYNC
         
-        --  ENCODERS
+        --  ENCODERS 1
         FMC1_HPC_HA02_P : in std_logic;
         FMC1_HPC_HA02_N : in std_logic;
         FMC1_HPC_HA03_P : in std_logic;
@@ -70,6 +70,29 @@ entity top is
         FMC1_HPC_HA10_P : out std_logic;  -- +
         FMC1_HPC_HA10_N : out std_logic;  -- -
         
+        --  ENCODERS 2
+        FMC1_HPC_LA10_P : in std_logic;
+        FMC1_HPC_LA10_N : in std_logic;
+        FMC1_HPC_LA11_P : in std_logic;
+        FMC1_HPC_LA11_N : in std_logic;
+        FMC1_HPC_LA12_P : in std_logic;
+        FMC1_HPC_LA12_N : in std_logic;
+        --FMC1_HPC_LA13_P : in std_logic;
+        --FMC1_HPC_LA13_N : in std_logic;
+        FMC1_HPC_LA14_P : in std_logic;
+        FMC1_HPC_LA14_N : in std_logic;
+        --FMC1_HPC_LA15_P : in std_logic;
+        --FMC1_HPC_LA15_N : in std_logic;
+        
+        FMC1_HPC_LA16_P : out std_logic;
+        FMC1_HPC_LA16_N : out std_logic;
+
+        --  ENC2
+        FMC1_HPC_HA11_P : in std_logic;
+        FMC1_HPC_HA11_N : in std_logic;
+        FMC1_HPC_HA13_P : in std_logic;
+        FMC1_HPC_HA13_N : in std_logic;
+        
         --  MIDI IN
         PMOD_0          : in std_logic;
         
@@ -86,7 +109,6 @@ entity top is
 --	      FMC1_HPC_LA06_P : out std_logic;	--  E
 --        FMC1_HPC_LA06_N : out std_logic;	--  RW
 --        FMC1_HPC_LA07_P : out std_logic;	--  RS
---        FMC1_HPC_LA10_P : out std_logic
         
     );
 end top;
@@ -135,8 +157,9 @@ architecture arch_top of top is
 
     type   encoderArray is array (0 to 5) of std_logic_vector(2 downto 0);
     signal encoders : encoderArray;
-    
-    --type   encoder std_logic_vector(2 downto 0);
+    signal encoders2 : encoderArray;
+        
+    --type   encoder std_logic_vector(1 downto 0);
 
     --  Prescale component
     component prescaler is
@@ -352,9 +375,29 @@ encoderTop_comp4: component encoderTop
    
 encoderTop_comp5: component encoderTop
     port map( clk, '1', FMC1_HPC_HA08_P, FMC1_HPC_HA08_N, FMC1_HPC_HA09_P, encoders(4)(0), encoders(4)(1), encoders(4)(2) );
-    
+
 encoderTop_comp6: component encoderTop
     port map( clk, '1', FMC1_HPC_HA09_N, FMC1_HPC_HA19_P, FMC1_HPC_HA19_N, encoders(5)(0), encoders(5)(1), encoders(5)(2) );
+     
+encoderTop_comp7: component encoderTop
+    port map( clk, '1', FMC1_HPC_LA10_P, FMC1_HPC_LA10_N, '1', encoders2(0)(0), encoders2(0)(1), encoders2(0)(2) );
+        
+encoderTop_comp8: component encoderTop
+    port map( clk, '1', FMC1_HPC_LA11_P, FMC1_HPC_LA11_N, '1', encoders2(1)(0), encoders2(1)(1), encoders2(1)(2) );
+    
+encoderTop_comp9: component encoderTop
+    port map( clk, '1', FMC1_HPC_LA12_P, FMC1_HPC_LA12_N, '1', encoders2(2)(0), encoders2(2)(1), encoders2(2)(2) );
+    
+encoderTop_comp10: component encoderTop
+    port map( clk, '1', FMC1_HPC_HA11_P, FMC1_HPC_HA11_N, '1', encoders2(3)(0), encoders2(3)(1), encoders2(3)(2) );
+   
+encoderTop_comp11: component encoderTop
+    port map( clk, '1', FMC1_HPC_LA14_P, FMC1_HPC_LA14_N, '1', encoders2(4)(0), encoders2(4)(1), encoders2(4)(2) );
+    
+encoderTop_comp12: component encoderTop
+    port map( clk, '1', FMC1_HPC_HA13_P, FMC1_HPC_HA13_N, '1', encoders2(5)(0), encoders2(5)(1), encoders2(5)(2) );
+
+
 
 prescale_comp: component prescaler
     generic map ( prescale => 4000 )
@@ -411,14 +454,17 @@ btn_comp0: component button
     GPIO_LED_2 <= gpioLEDS(2);
     GPIO_LED_3 <= gpioLEDS(3);
     
-    gpioLEDS(0) <= LFOduty_setting;
+    --gpioLEDS(0) <= LFOduty_setting;
     
     
-    --  ENCODERS
+    --  ENCODERS 1
     FMC1_HPC_HA10_P <= '1';  --  +
-    FMC1_HPC_HA10_N <= '0';  --  -;
+    FMC1_HPC_HA10_N <= '0';  --  -
+    --  ENCODERS 2
+    FMC1_HPC_LA16_P <= '1';  --  +
+    FMC1_HPC_LA16_N <= '0';  --  -
 
-    
+            
     --  FILTER
     enablefilter <= GPIO_DIP_SW3;
     cutoff <= cuttReg;   
@@ -519,7 +565,7 @@ begin
                 --if DACready = '1' then
                     --DACdata(3 downto 0) <= (OTHERS => '0');
                     if enablefilter = '1' then
-                        --DACdata(15 downto 4) <= std_logic_vector(signed(filterOut) + 2048);
+--                        DACdata(15 downto 4) <= std_logic_vector(signed(filterOut) + 2048);
 --                        DACdata(15 downto 9) <= LFOduty_output;
 --                        DACdata(8 downto 0) <= (OTHERS => '0');
 --                    else
@@ -541,7 +587,66 @@ begin
     
 end process;
 
+encoders2_process:
+process(clk)
+begin
 
+    if GPIO_SW_N = '1' then
+    
+        gpioLEDS(0) <= '0';
+        
+    elsif rising_edge(clk) then
+
+            if encoders2(0)(0) = '1' then
+                if encoders2(0)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                else
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                end if;
+            end if;
+    
+            if encoders2(1)(0) = '1' then
+                if encoders2(1)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                else
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                end if;
+            end if;
+            
+            if encoders2(2)(0) = '1' then
+                if encoders2(2)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                else
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                end if;
+            end if;
+            
+            if encoders2(3)(0) = '1' then
+                if encoders2(3)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                else
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                end if;
+            end if;
+            
+            if encoders2(4)(0) = '1' then
+                if encoders2(4)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                else
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                end if;
+            end if;
+    
+            if encoders2(5)(0) = '1' then
+                if encoders2(5)(1) = '1' then
+                    gpioLEDS(0) <= not(gpioLEDS(0));
+                else
+                    gpioLEDS(1) <= not(gpioLEDS(1));
+                end if;
+            end if;
+                                            
+    end if;
+end process;
 
 midi_key_process:
 process(clk)
@@ -558,7 +663,7 @@ begin
             if key_state_atk = '0' then
                 ASR_attack <= '1';
                 key_state_atk <= '1';
-                gpioLEDS(1) <= not(gpioLEDS(1));
+                --gpioLEDS(1) <= not(gpioLEDS(1));
             else
                 ASR_attack <= '0';
             end if;
@@ -570,7 +675,7 @@ begin
             key_state_atk <= '0';
             
             if key_state_rel = '1' 
-            then ASR_release <= '1'; key_state_rel <= '0'; gpioLEDS(1) <= not(gpioLEDS(1));
+            then ASR_release <= '1'; key_state_rel <= '0'; --gpioLEDS(1) <= not(gpioLEDS(1));
             else ASR_release <= '0';
             end if;
             
