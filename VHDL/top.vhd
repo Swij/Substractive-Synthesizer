@@ -439,11 +439,6 @@ btn_comp0: component button
 --	generic map(DesiredFreq => 312500, ClockFreq => 200000000)
 --	port map(Clk, Reset, Clock_Enable);
 
-
---LCD_comp:compoclknent LCD
-    --    --port map( clk, reset, FMC1_HPC_LA07_P, FMC1_HPC_LA06_N, FMC1_HPC_LA06_P, LCD_DATA, LCD_cmd, LCD_int, LCD_write, LCD_init, LCD_led );
-    --    port map( clk, reset, LCD_RS, LCD_RW, LCD_E, LCD_DATA, LCD_cmd, LCD_int, LCD_write, LCD_init, LCD_led );
-    
 --------------------------------------------------------------------------------
 ---- GPIO coupling
 --------------------------------------------------------------------------------
@@ -594,6 +589,7 @@ begin
     if GPIO_SW_N = '1' then
     
         gpioLEDS(0) <= '0';
+        gpioLEDS(1) <= '0';
         
     elsif rising_edge(clk) then
 

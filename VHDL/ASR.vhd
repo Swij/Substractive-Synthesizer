@@ -16,14 +16,14 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity ASR is
   generic(WIDTH:INTEGER:=12);
-  Port (clk     :in STD_LOGIC;
-        reset   :in STD_LOGIC;
-        x   :in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        attack  :in STD_LOGIC;
-        release :in STD_LOGIC;
-        atk_time    :in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        rls_time    :in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        y   :out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
+  Port (clk      : in STD_LOGIC;
+        reset    : in STD_LOGIC;
+        x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        attack   : in STD_LOGIC;
+        release  : in STD_LOGIC;
+        atk_time : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        rls_time : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
 end ASR;
 
 architecture arch_ASR of ASR is
