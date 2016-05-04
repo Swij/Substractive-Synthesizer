@@ -10,6 +10,7 @@ ENTITY MIDI_to_Osc IS
 		Reset		: in STD_LOGIC;
 		Clock		: in STD_LOGIC;
 		
+		Note_State  : out STD_LOGIC;
 		Note		: out STD_LOGIC_VECTOR(7 DOWNTO 0)
 	);
 END ENTITY;	
@@ -18,9 +19,9 @@ ARCHITECTURE MIDI_to_Osc_arch OF MIDI_to_Osc IS
 
 	SIGNAL Note_int : INTEGER RANGE 0 to 127;
 	SIGNAL Velo_int : INTEGER RANGE 0 to 127;
-	
+	SIGNAL Note_state_reg : STD_LOGIC := '0';
 BEGIN
-
+	Note_state <= Note_state_reg;
 	PROCESS(Clock, Reset)
 	BEGIN
 		
@@ -35,10 +36,12 @@ BEGIN
 			
 			IF Velo_int = 0 OR Note_on = '0' THEN
 				Note <= (OTHERS => '0');
+				Note_state_reg = '0';
 				
 			ELSIF (Note_on='1') THEN
 				
 				Note <= Data_in(15 DOWNTO 8);
+				Note_state_reg = '1';
 				
 			END IF;
 		END IF;
