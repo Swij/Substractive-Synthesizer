@@ -142,7 +142,6 @@ begin
                 inc <= getInc(1);
                 sawWave <= STD_LOGIC_VECTOR(to_unsigned(sum,12));
                 output <= sawWave;
-           
             end if;
             
             curr_state <= SETUP;

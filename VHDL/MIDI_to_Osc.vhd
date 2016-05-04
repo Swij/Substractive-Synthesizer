@@ -36,12 +36,12 @@ BEGIN
 			
 			IF Velo_int = 0 OR Note_on = '0' THEN
 				Note <= (OTHERS => '0');
-				Note_state_reg = '0';
+				Note_state_reg <= '0';
 				
 			ELSIF (Note_on='1') THEN
 				
 				Note <= Data_in(15 DOWNTO 8);
-				Note_state_reg = '1';
+				Note_state_reg <= '1';
 				
 			END IF;
 		END IF;

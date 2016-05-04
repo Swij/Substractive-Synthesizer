@@ -16,14 +16,14 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity ASR is
   generic(WIDTH:INTEGER:=12);
-  Port (clk:in STD_LOGIC;
-        reset:in STD_LOGIC;
-        x:in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        attack:in STD_LOGIC;
-        release:in STD_LOGIC;
-        atk_time:in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        rls_time:in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        y:out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
+  Port (clk     :in STD_LOGIC;
+        reset   :in STD_LOGIC;
+        x   :in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        attack  :in STD_LOGIC;
+        release :in STD_LOGIC;
+        atk_time    :in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        rls_time    :in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        y   :out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
 end ASR;
 
 architecture arch_ASR of ASR is
@@ -32,9 +32,7 @@ type state_machine is (idle_state, attack_state, sustain_state, release_state);
 signal state : state_machine;
 signal step : STD_LOGIC_VECTOR(WIDTH-1 downto 0);
 signal mult : STD_LOGIC_VECTOR(2*WIDTH-1 downto 0);
---signal new_train : STD_LOGIC;
 signal counter : STD_LOGIC_VECTOR(WIDTH-1 downto 0);
---signal divider : STD_LOGIC_VECTOR(WIDTH-1 downto 0);
 
 begin
     
@@ -48,14 +46,15 @@ begin
     end process;
     
     env_proc:process(clk,reset)
-    variable max_level:STD_LOGIC_VECTOR(WIDTH-1 downto 0) := "000000001000";
+    variable max_level:STD_LOGIC_VECTOR(WIDTH-1 downto 0) := "011111111111";
     begin
-        if(reset = '1') then
+        if(reset = '0') then --reset active low
             state <= idle_state; --If reset then idle
             step <= (others => '0'); --If reset then reset the level of the output
             counter <= (others => '0');
         elsif(RISING_EDGE(clk)) then --start state machine
-            --if(new_train = '1') then --Want to check states upon new wave coming in
+                
+                
                 case state is
                     when idle_state =>
                         if(attack = '0') then
@@ -92,9 +91,7 @@ begin
                             counter <= (others => '0'); --Reset counter
                         end if;
                 end case;
-            --end if;
         end if;
     end process;
 
 end arch_ASR;
-

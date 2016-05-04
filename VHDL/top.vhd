@@ -68,10 +68,10 @@ entity top is
         FMC1_HPC_HA19_N : in STD_LOGIC;        
         
         FMC1_HPC_HA10_P : out STD_LOGIC;  -- +
-        FMC1_HPC_HA10_N : out STD_LOGIC  -- -
+        FMC1_HPC_HA10_N : out STD_LOGIC;  -- -
         
         --  LCD (LVCMOS25)
---        FMC1_HPC_LA02_P : out STD_LOGIC;	--  DB7
+        FMC1_HPC_LA02_P : out STD_LOGIC	--  DB7
 --        FMC1_HPC_LA02_N : out STD_LOGIC;	--  ...
 --        FMC1_HPC_LA03_P : out STD_LOGIC;	--  ...     
 --        FMC1_HPC_LA03_N : out STD_LOGIC;	--  ...
@@ -227,60 +227,61 @@ architecture arch_top of top is
     signal LFOduty_rateReg  : integer range 0 to 255 := 198; -- std_logic_vector (7 downto 0);
     signal LFOduty_depthReg : integer range 0 to 127 := 50; -- std_logic_vector (6 downto 0);
     
-	-- MIDI Components
+    -- Button component
+    component button is
+    port( clk     : in STD_LOGIC;
+          reset   : in STD_LOGIC;
+          btn_in  : in STD_LOGIC;
+          btn_out : out STD_LOGIC);
+    end component;
+    
+    signal btn0_in  : std_logic; 
+    signal btn0_out : std_logic;
+        
+	-- MIDI components
+	component Uart is
+    port( Data_in   : in std_logic;
+          Reset     : in std_logic;
+          Clock     : in std_logic;
+          Data_send : out std_logic;
+          Data_out  : out std_logic_vector(7 downto 0) );
+	end component;
 	
-	COMPONENT Uart IS
-		PORT ( 
-		Data_in		: in STD_LOGIC;
-		Reset		: in STD_LOGIC;
-		Clock		: in STD_LOGIC;
-		Data_send	: out STD_LOGIC;
-		Data_out	: out STD_LOGIC_VECTOR(7 DOWNTO 0)
-	);
-	END COMPONENT;
+	component MIDI_Decoder is 
+	port( Data_in    : in std_logic_vector(7 downto 0);
+          Data_ready : in std_logic;
+          Reset      : in std_logic;
+          Clock      : in std_logic;
+          Data_out   : out std_logic_vector(15 downto 0);
+          Data_send  : out std_logic;
+          Note_state_out : out std_logic );
+	end component;
 	
-	COMPONENT MIDI_Decoder IS 
-	PORT (
-		Data_in 	: in STD_LOGIC_VECTOR(7 DOWNTO 0);
-		Data_ready	: in STD_LOGIC;
-		Reset		: in STD_LOGIC;
-		Clock		: in STD_LOGIC;
-		
-		Data_out		: out STD_LOGIC_VECTOR(15 DOWNTO 0);
-		Data_send		: out STD_LOGIC;
-		Note_state_out	: out STD_LOGIC
-	);
-	END COMPONENT;
+	component MIDI_to_Osc is
+	port( Data_in    : in std_logic_vector(15 downto 0);
+          Note_on    : in std_logic;
+          Data_ready : in std_logic;
+          Reset      : in std_logic;
+          Clock      : in std_logic;
+          Note       : out std_logic_vector(7 downto 0) );
+	end component;
 	
-	COMPONENT MIDI_to_Osc IS
-	PORT (
-		Data_in		: in STD_LOGIC_VECTOR(15 DOWNTO 0);
-		Note_on		: in STD_LOGIC;
-		Data_ready	: in STD_LOGIC;
-		Reset		: in STD_LOGIC;
-		Clock		: in STD_LOGIC;
-		
-		Note		: out STD_LOGIC_VECTOR(7 DOWNTO 0)
-	);
-	END COMPONENT;
+	component ClockEnable is
+    generic( DesiredFreq : integer;
+             ClockFreq : integer);
+    port(
+        ClockIn  : in std_logic;
+        Reset    : in std_logic;
+        ClockOut : out std_logic );
+    end component;
 	
-	COMPONENT ClockEnable IS
-		GENERIC(DesiredFreq : INTEGER;
-				ClockFreq : INTEGER);
-		PORT(
-			ClockIn 	: IN STD_LOGIC;
-			Reset		: IN STD_LOGIC;
-			ClockOut	: OUT STD_LOGIC
-		);
-	END COMPONENT;
-	
-	SIGNAL Clock_Enable : STD_LOGIC;
-	SIGNAL Uart_send : STD_LOGIC;
-	SIGNAL Uart_Dec : STD_LOGIC_VECTOR(7 DOWNTO 0);
-	SIGNAL Note_data : STD_LOGIC_VECTOR(15 DOWNTO 0);
-	SIGNAL Note_ready : STD_LOGIC;
-	SIGNAL Note_state : STD_LOGIC;
-	SIGNAL Note_out : STD_LOGIC_VECTOR(7 DOWNTO 0);
+    signal Clock_Enable : std_logic;
+    signal Uart_send    : std_logic;
+    signal Uart_Dec     : std_logic_vector(7 downto 0);
+    signal Note_data    : std_logic_vector(15 downto 0);
+    signal Note_ready   : std_logic;
+    signal Note_state   : std_logic;
+    signal Note_out     : std_logic_vector(7 downto 0);
 	
     --  LCD component
 --    component LCD is
@@ -309,7 +310,7 @@ architecture arch_top of top is
 --    signal LCD_led   : std_logic_vector(3 downto 0);
 
     --  Test signals and others...
-    signal gpioLEDS   : std_logic_vector(3 downto 0);
+    signal gpioLEDS : std_logic_vector(3 downto 0);
     signal waveReg : integer range 0 to 7 := 0;
     signal semiReg : integer range -11 to 11 := 0;
     signal dutyReg : integer range 0 to 100 := 50;
@@ -357,7 +358,11 @@ DAC_comp:component AD5065_DAC
 LFOduty_comp:component LFO_duty
     port map( clk, reset, LFOduty_restart,  LFOduty_enable, LFOduty_rate, LFOduty_depth, LFOduty_waveForm, LFOduty_output );
 	
--- MIDI Instantiation
+ASR_comp:component ASR
+        port map( preClkASR, reset, OSC1output, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
+    
+btn_comp0:component button
+    port map( clk, reset, GPIO_SW_S, btn0_out );
 
 Uart_inst: COMPONENT Uart
 	port map(PMOD_0, Reset, Clock_Enable, Uart_send, Uart_Dec);
@@ -372,13 +377,23 @@ ClockEn_inst: COMPONENT ClockEnable
 	generic map(DesiredFreq => 312500, ClockFreq => 200000000)
 	port map(Clk, Reset, Clock_Enable);
 	
-    
---ASR_comp:component ASR
---    port map( clk, reset, ASR_x, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
-
 --LCD_comp:component LCD
 --	--port map( clk, reset, FMC1_HPC_LA07_P, FMC1_HPC_LA06_N, FMC1_HPC_LA06_P, LCD_DATA, LCD_cmd, LCD_int, LCD_write, LCD_init, LCD_led );
 --	port map( clk, reset, LCD_RS, LCD_RW, LCD_E, LCD_DATA, LCD_cmd, LCD_int, LCD_write, LCD_init, LCD_led );
+
+Uart_inst: COMPONENT Uart
+	port map(PMOD_0, Reset, Clock_Enable, Uart_send, Uart_Dec);
+	
+MIDI_dec_inst: COMPONENT MIDI_Decoder
+	port map(Uart_Dec, Uart_send, Reset, Clock_Enable, Note_data, Note_ready, Note_state);
+	
+MIDI_to_osc_inst: COMPONENT MIDI_to_Osc
+	port map(Note_data, Note_state, Note_ready, Reset, Clock_Enable, Note_out);
+	
+ClockEn_inst: COMPONENT ClockEnable
+	generic map(DesiredFreq => 312500, ClockFreq => 200000000)
+	port map(Clk, Reset, Clock_Enable);
+
 
 --------------------------------------------------------------------------------
 ---- GPIO coupling
