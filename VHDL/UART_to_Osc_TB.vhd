@@ -192,7 +192,7 @@ Test_proc:
 
 	WAIT FOR Clock_period*5;
 		MIDI_input_TB <= '0';
-		ASSERT (Received_note_TB = "00101000")
+		ASSERT (Received_note_TB = "00101001")
 		REPORT ("Wrong note recieved");	
 	
 	----------------------------

@@ -227,6 +227,61 @@ architecture arch_top of top is
     signal LFOduty_rateReg  : integer range 0 to 255 := 198; -- std_logic_vector (7 downto 0);
     signal LFOduty_depthReg : integer range 0 to 127 := 50; -- std_logic_vector (6 downto 0);
     
+	-- MIDI Components
+	
+	COMPONENT Uart IS
+		PORT ( 
+		Data_in		: in STD_LOGIC;
+		Reset		: in STD_LOGIC;
+		Clock		: in STD_LOGIC;
+		Data_send	: out STD_LOGIC;
+		Data_out	: out STD_LOGIC_VECTOR(7 DOWNTO 0)
+	);
+	END COMPONENT;
+	
+	COMPONENT MIDI_Decoder IS 
+	PORT (
+		Data_in 	: in STD_LOGIC_VECTOR(7 DOWNTO 0);
+		Data_ready	: in STD_LOGIC;
+		Reset		: in STD_LOGIC;
+		Clock		: in STD_LOGIC;
+		
+		Data_out		: out STD_LOGIC_VECTOR(15 DOWNTO 0);
+		Data_send		: out STD_LOGIC;
+		Note_state_out	: out STD_LOGIC
+	);
+	END COMPONENT;
+	
+	COMPONENT MIDI_to_Osc IS
+	PORT (
+		Data_in		: in STD_LOGIC_VECTOR(15 DOWNTO 0);
+		Note_on		: in STD_LOGIC;
+		Data_ready	: in STD_LOGIC;
+		Reset		: in STD_LOGIC;
+		Clock		: in STD_LOGIC;
+		
+		Note		: out STD_LOGIC_VECTOR(7 DOWNTO 0)
+	);
+	END COMPONENT;
+	
+	COMPONENT ClockEnable IS
+		GENERIC(DesiredFreq : INTEGER;
+				ClockFreq : INTEGER);
+		PORT(
+			ClockIn 	: IN STD_LOGIC;
+			Reset		: IN STD_LOGIC;
+			ClockOut	: OUT STD_LOGIC
+		);
+	END COMPONENT;
+	
+	SIGNAL Clock_Enable : STD_LOGIC;
+	SIGNAL Uart_send : STD_LOGIC;
+	SIGNAL Uart_Dec : STD_LOGIC_VECTOR(7 DOWNTO 0);
+	SIGNAL Note_data : STD_LOGIC_VECTOR(15 DOWNTO 0);
+	SIGNAL Note_ready : STD_LOGIC;
+	SIGNAL Note_state : STD_LOGIC;
+	SIGNAL Note_out : STD_LOGIC_VECTOR(7 DOWNTO 0);
+	
     --  LCD component
 --    component LCD is
 --    port( clk    : in  std_logic;
@@ -269,7 +324,7 @@ IBUFDS_inst: IBUFDS
     IB <= SYSCLK_N;
 
 oscillator_comp:component oscillator
-    port map( clk, reset, OSC1enable, OSC1waveForm, OSC1note, OSC1semi, OSC1dutyCycle, OSC1output );
+    port map( clk, reset, OSC1enable, OSC1waveForm, Note_out, OSC1semi, OSC1dutyCycle, OSC1output );
 
 encoderTop_comp1:component encoderTop
     port map( clk, '1', FMC1_HPC_HA02_P, FMC1_HPC_HA02_N, FMC1_HPC_HA03_P, encoders(0)(0), encoders(0)(1), encoders(0)(2) );
@@ -301,7 +356,22 @@ DAC_comp:component AD5065_DAC
     
 LFOduty_comp:component LFO_duty
     port map( clk, reset, LFOduty_restart,  LFOduty_enable, LFOduty_rate, LFOduty_depth, LFOduty_waveForm, LFOduty_output );
+	
+-- MIDI Instantiation
 
+Uart_inst: COMPONENT Uart
+	port map(PMOD_0, Reset, Clock_Enable, Uart_send, Uart_Dec);
+	
+MIDI_dec_inst: COMPONENT MIDI_Decoder
+	port map(Uart_Dec, Uart_send, Reset, Clock_Enable, Note_data, Note_ready, Note_state);
+	
+MIDI_to_osc_inst: COMPONENT MIDI_to_Osc
+	port map(Note_data, Note_state, Note_ready, Reset, Clock_Enable, Note_out);
+	
+ClockEn_inst: COMPONENT ClockEnable
+	generic map(DesiredFreq => 312500, ClockFreq => 200000000)
+	port map(Clk, Reset, Clock_Enable);
+	
     
 --ASR_comp:component ASR
 --    port map( clk, reset, ASR_x, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
