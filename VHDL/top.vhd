@@ -226,8 +226,7 @@ architecture arch_top of top is
     end component;
     
     signal ASR_x        : std_logic_vector(12-1 downto 0);
-    signal ASR_attack   : std_logic;
-    signal ASR_release  : std_logic;
+    signal Note_state   : std_logic;
     signal ASR_atk_time : std_logic_vector(12-1 downto 0);
     signal ASR_rls_time : std_logic_vector(12-1 downto 0);
     signal ASR_y        : std_logic_vector(12-1 downto 0);
@@ -293,6 +292,7 @@ architecture arch_top of top is
           Data_ready : in std_logic;
           Reset      : in std_logic;
           Clock      : in std_logic;
+		  Note_state : out std_logic;
           Note       : out std_logic_vector(7 downto 0) );
 	end component;
 	
@@ -305,13 +305,14 @@ architecture arch_top of top is
         ClockOut : out std_logic );
     end component;
 	
-    signal Clock_Enable : std_logic;
-    signal Uart_send    : std_logic;
-    signal Uart_Dec     : std_logic_vector(7 downto 0);
-    signal Note_data    : std_logic_vector(15 downto 0);
-    signal Note_ready   : std_logic;
-    signal Note_state   : std_logic;
-    signal Note_out     : std_logic_vector(7 downto 0);
+    signal Clock_Enable 	: std_logic;
+    signal Uart_send    	: std_logic;
+    signal Uart_Dec     	: std_logic_vector(7 downto 0);
+    signal Note_data    	: std_logic_vector(15 downto 0);
+    signal Note_ready   	: std_logic;
+    signal Note_state_int   : std_logic;
+	signal Note_state		: std_logic;
+    signal Note_out     	: std_logic_vector(7 downto 0);
 	
     --  LCD component
 --    component LCD is
@@ -417,7 +418,7 @@ prescale_comp_ASR: component prescaler
     port map ( clk, preClkASR );
         	
 ASR_comp: component ASR
-    port map( preClkASR, reset, OSC1output, ASR_attack, ASR_release, ASR_atk_time, ASR_rls_time, ASR_y );
+    port map( preClkASR, reset, OSC1output, Note_state, ASR_atk_time, ASR_rls_time, ASR_y );
     
 btn_comp0: component button
     port map( clk, reset, GPIO_SW_S, btn0_out );
@@ -430,10 +431,10 @@ btn_comp0: component button
 --	port map(PMOD_0, Reset, Clock_Enable, Uart_send, Uart_Dec);
 	
 --MIDI_dec_comp: component MIDI_Decoder
---	port map(Uart_Dec, Uart_send, Reset, Clock_Enable, Note_data, Note_ready, Note_state);
+--	port map(Uart_Dec, Uart_send, Reset, Clock_Enable, Note_data, Note_ready, Note_state_int);
 	
 --MIDI_to_osc_comp: component MIDI_to_Osc
---	port map(Note_data, Note_state, Note_ready, Reset, Clock_Enable, Note_out);
+--	port map(Note_data, Note_state_int, Note_ready, Reset, Clock_Enable, Note_state, Note_out);
 	
 --ClockEn_comp: component ClockEnable
 --	generic map(DesiredFreq => 312500, ClockFreq => 200000000)

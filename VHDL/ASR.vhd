@@ -16,14 +16,13 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity ASR is
   generic(WIDTH:INTEGER:=12);
-  Port (clk      : in STD_LOGIC;
-        reset    : in STD_LOGIC;
-        x        : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        attack   : in STD_LOGIC;
-        release  : in STD_LOGIC;
-        atk_time : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        rls_time : in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        y        : out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
+  Port (clk      	: in STD_LOGIC;
+        reset    	: in STD_LOGIC;
+        x        	: in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        Note_state  : in STD_LOGIC;
+        atk_time 	: in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        rls_time 	: in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        y        	: out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
 end ASR;
 
 architecture arch_ASR of ASR is
@@ -57,15 +56,15 @@ begin
                 
                 case state is
                     when idle_state =>
-                        if(attack = '0') then
+                        if(Note_state = '0') then
                             state <= idle_state; --No attack then remain in this state
                             step <= (others => '0'); 
-                        elsif(attack = '1') then
+                        elsif(Note_state = '1') then
                             state <= attack_state; --Move to attack state if the attack flag is high
                         end if;
                     when attack_state =>
                         counter <= STD_LOGIC_VECTOR(SIGNED(counter) + 1);
-                        if(release = '1') then
+                        if(Note_state = '0') then
                             state <= release_state; --If release flag sent then go immediately to release state
                         elsif(step = max_level) then
                             state <= sustain_state; --Go to sustain state if maximum level reached
@@ -75,7 +74,7 @@ begin
                             counter <= (others => '0'); --Reset counter
                         end if;
                     when sustain_state =>
-                        if(release = '1') then
+                        if(Note_state = '0') then
                             state <= release_state; --If release flag detected go to release state
                         end if;
                     when release_state =>
@@ -83,7 +82,7 @@ begin
                         if(step = "000000000000") then
                             state <= idle_state; --If the signal is completely diminished simply return to idle state
                             counter <= (others => '0'); --Reset counter
-                        elsif(attack = '1') then
+                        elsif(NOte_state = '1') then
                             state <= attack_state; --If another key is pressed go to the attack state
                             counter <= (others => '0'); --Reset counter
                         elsif(counter = rls_time) then
