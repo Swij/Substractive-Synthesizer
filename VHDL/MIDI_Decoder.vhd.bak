@@ -70,22 +70,18 @@ BEGIN
 					Byte_cnt <= 2;
 					Note_state <= '1';
 					MIDI_Decoder_State <= Recieve;
+								
+				WHEN Prev_note_reg =>
 				
-					
+					Byte_cnt <= 1;
+					Note_state <= NOT(Note_state);
+					MIDI_Decoder_state <= Recieve;
+					Data_acc(15 DOWNTO 8) <= Prev_note_reg;
 					
 				WHEN Others =>
-					
-					IF(Data_in = Prev_note_reg) THEN
-						Byte_cnt <= 1;
-						Note_state <= NOT(Note_state);
-						MIDI_Decoder_state <= Recieve;
-						Data_acc(15 DOWNTO 8) <= Prev_note_reg;
-
-					ELSE
-	
-						MIDI_Decoder_state <= Idle;
-					END IF;
-
+				
+					MIDI_Decoder_state <= Idle;
+			
 				END CASE;
 			
 			END IF;

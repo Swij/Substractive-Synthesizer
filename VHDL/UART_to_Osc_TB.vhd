@@ -22,6 +22,8 @@ ARCHITECTURE UART_to_Osc_TB_arch OF UART_to_Osc_TB IS
 	
 	SIGNAL Clock_period : TIME;
 	SIGNAL Clock_Enable_TB: STD_LOGIC;
+	SIGNAL New_byte : STD_LOGIC := '0';
+	SIGNAL Note_state_rec : STD_LOGIC;
 	
 	COMPONENT Uart IS
 		PORT ( 
@@ -54,6 +56,7 @@ ARCHITECTURE UART_to_Osc_TB_arch OF UART_to_Osc_TB IS
 		Reset		: in STD_LOGIC;
 		Clock		: in STD_LOGIC;
 		
+		Note_state	: out STD_LOGIC;
 		Note		: out STD_LOGIC_VECTOR(7 DOWNTO 0)
 	);
 	END COMPONENT;
@@ -99,6 +102,7 @@ PORT MAP(
 	Dec_to_int_Send_TB,
 	Reset_TB,
 	Clock_enable_TB,
+	Note_state_rec,
 	Received_note_TB
 );
 
@@ -121,10 +125,12 @@ Test_proc:
 	Reset_TB <= '1';
 	
 	
-	WAIT FOR Clock_period*2;
+	WAIT FOR 200 us;
 		Reset_TB <= '0';
+		New_byte <= '1';
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
+		New_byte <= '0';
 		
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
@@ -145,8 +151,10 @@ Test_proc:
 		
 	WAIT FOR Clock_period;	
 		MIDI_input_TB <= '1';
+		New_byte <= '1';
 	WAIT FOR Clock_period;	
 		MIDI_input_TB <= '0';
+		New_byte <= '0';
 		
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '1';
@@ -165,10 +173,12 @@ Test_proc:
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
 
-	WAIT FOR Clock_period;
+	WAIT FOR Clock_period;	
 		MIDI_input_TB <= '1';
-	WAIT FOR Clock_period;
+		New_byte <= '1';
+	WAIT FOR Clock_period;	
 		MIDI_input_TB <= '0';
+		New_byte <= '0';
 		
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
@@ -187,13 +197,12 @@ Test_proc:
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';	
 	
-	WAIT FOR Clock_period;
+	WAIT FOR Clock_period;	
 		MIDI_input_TB <= '1';
-
-	WAIT FOR Clock_period*5;
+		New_byte <= '1';
+	WAIT FOR Clock_period;	
 		MIDI_input_TB <= '0';
-		ASSERT (Received_note_TB = "00101001")
-		REPORT ("Wrong note recieved");	
+		New_byte <= '0';
 	
 	----------------------------
 	
@@ -216,8 +225,34 @@ Test_proc:
 		
 	WAIT FOR Clock_period;	
 		MIDI_input_TB <= '1';
+		New_byte <= '1';
 	WAIT FOR Clock_period;	
 		MIDI_input_TB <= '0';
+		New_byte <= '0';
+		
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '1';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '1';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '1';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+		
+	WAIT FOR Clock_period;	
+		MIDI_input_TB <= '1';
+		New_byte <= '1';
+	WAIT FOR Clock_period;	
+		MIDI_input_TB <= '0';
+		New_byte <= '0';
 		
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
@@ -235,11 +270,37 @@ Test_proc:
 		MIDI_input_TB <= '0';
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
-
+		
+	WAIT FOR Clock_period;	
+		MIDI_input_TB <= '1';
+		New_byte <= '1';
+	WAIT FOR Clock_period;	
+		MIDI_input_TB <= '0';
+		New_byte <= '0';
+		
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '1';
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '1';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '1';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+	WAIT FOR Clock_period;
+		MIDI_input_TB <= '0';
+		
+	WAIT FOR Clock_period;	
+		MIDI_input_TB <= '1';
+		New_byte <= '1';
+	WAIT FOR Clock_period;	
+		MIDI_input_TB <= '0';
+		New_byte <= '0';
 		
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '0';
@@ -260,15 +321,14 @@ Test_proc:
 		
 	WAIT FOR Clock_period;
 		MIDI_input_TB <= '1';
-	
 
 	
 	WAIT FOR Clock_period*3;
-		ASSERT (Received_note_TB = "00000000")
-		REPORT ("Note should be off");	
+		ASSERT (Received_note_TB = "00101001")
+		REPORT ("Wrong Note recieved");	
 	
-	WAIT FOR Clock_period*5;
-		Reset_TB <= '1';
+	--WAIT FOR Clock_period*5;
+		--Reset_TB <= '1';
 END PROCESS Test_proc;
 
 clk_proc:
