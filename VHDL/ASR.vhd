@@ -15,25 +15,40 @@ use IEEE.NUMERIC_STD.ALL;
 --use UNISIM.VComponents.all;
 
 entity ASR is
-  generic(WIDTH:INTEGER:=12);
-  Port (clk      	: in STD_LOGIC;
-        reset    	: in STD_LOGIC;
-        x        	: in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        Note_state  : in STD_LOGIC;
-        atk_time 	: in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        rls_time 	: in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
-        y        	: out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
+  generic(WIDTH:INTEGER:=12;
+	  VAL:INTEGER:=16);
+  Port (clk:in STD_LOGIC;
+        reset:in STD_LOGIC;
+        x:in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+        --attack:in STD_LOGIC;
+        --release:in STD_LOGIC;
+	note_state:in STD_LOGIC;
+        atk_time:in STD_LOGIC_VECTOR(VAL-1 downto 0);
+        rls_time:in STD_LOGIC_VECTOR(VAL-1 downto 0);
+        y:out STD_LOGIC_VECTOR(WIDTH-1 downto 0));
 end ASR;
 
 architecture arch_ASR of ASR is
+
+component prescale_env is
+  generic(WIDTH:INTEGER:=12);
+  Port (clk:in STD_LOGIC;
+	div_clk:out STD_LOGIC);
+end component;
 
 type state_machine is (idle_state, attack_state, sustain_state, release_state);
 signal state : state_machine;
 signal step : STD_LOGIC_VECTOR(WIDTH-1 downto 0);
 signal mult : STD_LOGIC_VECTOR(2*WIDTH-1 downto 0);
-signal counter : STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+signal counter : STD_LOGIC_VECTOR(VAL-1 downto 0);
+signal div_clk:STD_LOGIC;
 
 begin
+
+    --Component mapping
+prescale_env_comp:component prescale_env
+		generic map(WIDTH => WIDTH)
+		port map(clk, div_clk);
     
     y <= mult(2*WIDTH-1 downto WIDTH); --Output is 12 MSBs of the internal multiplied value
 
@@ -43,28 +58,29 @@ begin
             mult <= STD_LOGIC_VECTOR(SIGNED(x)*SIGNED(step)); --Get the level of the signal
         end if;
     end process;
+
     
     env_proc:process(clk,reset)
     variable max_level:STD_LOGIC_VECTOR(WIDTH-1 downto 0) := "011111111111";
+    variable count:INTEGER range 0 to 127 := 0;
     begin
         if(reset = '0') then --reset active low
             state <= idle_state; --If reset then idle
             step <= (others => '0'); --If reset then reset the level of the output
             counter <= (others => '0');
-        elsif(RISING_EDGE(clk)) then --start state machine
-                
-                
+	    count := 0;
+        elsif(RISING_EDGE(clk)) then --start state machine		
                 case state is
                     when idle_state =>
-                        if(Note_state = '0') then
+                        if(note_state = '0') then
                             state <= idle_state; --No attack then remain in this state
                             step <= (others => '0'); 
-                        elsif(Note_state = '1') then
+                        elsif(note_state = '1') then
                             state <= attack_state; --Move to attack state if the attack flag is high
                         end if;
                     when attack_state =>
-                        counter <= STD_LOGIC_VECTOR(SIGNED(counter) + 1);
-                        if(Note_state = '0') then
+	                 counter <= STD_LOGIC_VECTOR(SIGNED(counter) + 1);
+                        if(note_state= '0') then
                             state <= release_state; --If release flag sent then go immediately to release state
                         elsif(step = max_level) then
                             state <= sustain_state; --Go to sustain state if maximum level reached
@@ -74,15 +90,15 @@ begin
                             counter <= (others => '0'); --Reset counter
                         end if;
                     when sustain_state =>
-                        if(Note_state = '0') then
+                        if(note_state = '0') then
                             state <= release_state; --If release flag detected go to release state
                         end if;
                     when release_state =>
-                        counter <= STD_LOGIC_VECTOR(SIGNED(counter) + 1);
+	                 counter <= STD_LOGIC_VECTOR(SIGNED(counter) + 1);
                         if(step = "000000000000") then
                             state <= idle_state; --If the signal is completely diminished simply return to idle state
                             counter <= (others => '0'); --Reset counter
-                        elsif(NOte_state = '1') then
+                        elsif(note_state = '1') then
                             state <= attack_state; --If another key is pressed go to the attack state
                             counter <= (others => '0'); --Reset counter
                         elsif(counter = rls_time) then
@@ -94,3 +110,4 @@ begin
     end process;
 
 end arch_ASR;
+
