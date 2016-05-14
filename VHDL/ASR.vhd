@@ -30,12 +30,6 @@ end ASR;
 
 architecture arch_ASR of ASR is
 
-component prescale_env is
-  generic(WIDTH:INTEGER:=12);
-  Port (clk:in STD_LOGIC;
-	div_clk:out STD_LOGIC);
-end component;
-
 type state_machine is (idle_state, attack_state, sustain_state, release_state);
 signal state : state_machine;
 signal step : STD_LOGIC_VECTOR(WIDTH-1 downto 0);
@@ -44,11 +38,6 @@ signal counter : STD_LOGIC_VECTOR(VAL-1 downto 0);
 signal div_clk:STD_LOGIC;
 
 begin
-
-    --Component mapping
-prescale_env_comp:component prescale_env
-		generic map(WIDTH => WIDTH)
-		port map(clk, div_clk);
     
     y <= mult(2*WIDTH-1 downto WIDTH); --Output is 12 MSBs of the internal multiplied value
 

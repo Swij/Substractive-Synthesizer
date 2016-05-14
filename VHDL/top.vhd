@@ -36,10 +36,10 @@ entity top is
 --        ROTARY_PUSH : in std_logic;
         
         --  DIP ON PCB
-        GPIO_DIP_SW0 : in std_logic;
-        GPIO_DIP_SW1 : in std_logic;
-        GPIO_DIP_SW2 : in std_logic;
-        GPIO_DIP_SW3 : in std_logic;
+--        GPIO_DIP_SW0 : in std_logic;
+--        GPIO_DIP_SW1 : in std_logic;
+--        GPIO_DIP_SW2 : in std_logic;
+--        GPIO_DIP_SW3 : in std_logic;
         
         --  DAC ON PCB
         XADC_GPIO_0 : out std_logic;  --  LDAC
@@ -86,7 +86,18 @@ entity top is
         
         FMC1_HPC_LA16_P : out std_logic;
         FMC1_HPC_LA16_N : out std_logic;
-
+        
+        --  SWITCHES
+        FMC1_HPC_HA18_P : in std_logic;
+        FMC1_HPC_HA18_N : in std_logic;
+        --FMC1_HPC_HA17_CC_P : in std_logic;
+        --FMC1_HPC_HA17_CC_P : in std_logic;
+        FMC1_HPC_HA16_P : in std_logic;
+        FMC1_HPC_HA16_N : in std_logic;
+        FMC1_HPC_HA15_P : in std_logic;
+        FMC1_HPC_HA15_N : in std_logic;
+                
+                
         --  ENC2
         FMC1_HPC_HA11_P : in std_logic;
         FMC1_HPC_HA11_N : in std_logic;
@@ -94,10 +105,10 @@ entity top is
         FMC1_HPC_HA13_N : in std_logic;
         
         --  MIDI IN
-        PMOD_0          : in std_logic;
+        PMOD_0          : in std_logic
         
         --  LCD (LVCMOS25)
-        FMC1_HPC_LA02_P : out std_logic	--  DB7
+--        FMC1_HPC_LA02_P : out std_logic	--  DB7
 --        FMC1_HPC_LA02_N : out std_logic;	--  ...
 --        FMC1_HPC_LA03_P : out std_logic;	--  ...     
 --        FMC1_HPC_LA03_N : out std_logic;	--  ...
@@ -214,25 +225,24 @@ architecture arch_top of top is
 
     --  Envelope component
     component ASR is
-    generic( WIDTH : integer := 12);
+    generic( WIDTH : integer := 12;
+             VAL:INTEGER := 16 );
     port( clk      : in std_logic;
           reset    : in std_logic;
           x        : in std_logic_vector(WIDTH-1 downto 0);
-          attack   : in std_logic;
-          release  : in std_logic;
-          atk_time : in std_logic_vector(WIDTH-1 downto 0);
-          rls_time : in std_logic_vector(WIDTH-1 downto 0);
+          note_state:in std_logic;
+          atk_time : in std_logic_vector(VAL-1 downto 0);
+          rls_time : in std_logic_vector(VAL-1 downto 0);
           y        : out std_logic_vector(WIDTH-1 downto 0));
     end component;
-    
-    signal ASR_x        : std_logic_vector(12-1 downto 0);
-    signal Note_state   : std_logic;
-    signal ASR_atk_time : std_logic_vector(12-1 downto 0);
-    signal ASR_rls_time : std_logic_vector(12-1 downto 0);
+
+    signal ASR_noteState : std_logic;
+    signal ASR_atk_time : std_logic_vector(16-1 downto 0);
+    signal ASR_rls_time : std_logic_vector(16-1 downto 0);
     signal ASR_y        : std_logic_vector(12-1 downto 0);
     signal ASR_led      : std_logic;
-    signal ASR_atk_timeReg : integer range 0 to 4095 := 4095;
-    signal ASR_rls_timeReg : integer range 0 to 4095 := 4095;
+    signal ASR_atk_timeReg : integer range 0 to 65535 := 32767;
+    signal ASR_rls_timeReg : integer range 0 to 65535 := 32767;
     
     -- LFO component (duty-cycle)
     component LFO_duty is
@@ -292,7 +302,6 @@ architecture arch_top of top is
           Data_ready : in std_logic;
           Reset      : in std_logic;
           Clock      : in std_logic;
-		  Note_state : out std_logic;
           Note       : out std_logic_vector(7 downto 0) );
 	end component;
 	
@@ -305,14 +314,13 @@ architecture arch_top of top is
         ClockOut : out std_logic );
     end component;
 	
-    signal Clock_Enable 	: std_logic;
-    signal Uart_send    	: std_logic;
-    signal Uart_Dec     	: std_logic_vector(7 downto 0);
-    signal Note_data    	: std_logic_vector(15 downto 0);
-    signal Note_ready   	: std_logic;
-    signal Note_state_int   : std_logic;
-	signal Note_state		: std_logic;
-    signal Note_out     	: std_logic_vector(7 downto 0);
+    signal Clock_Enable : std_logic;
+    signal Uart_send    : std_logic;
+    signal Uart_Dec     : std_logic_vector(7 downto 0);
+    signal Note_data    : std_logic_vector(15 downto 0);
+    signal Note_ready   : std_logic;
+    signal Note_state   : std_logic;
+    signal Note_out     : std_logic_vector(7 downto 0);
 	
     --  LCD component
 --    component LCD is
@@ -348,8 +356,7 @@ architecture arch_top of top is
     signal cuttReg : integer range 0 to 5000 := 1000;    
     
     signal key_state_atk : std_logic;
-    signal key_state_rel : std_logic; 
-    signal preDebug : std_logic;  
+    signal key_state_rel : std_logic;
                
 begin    
 
@@ -398,8 +405,6 @@ encoderTop_comp11: component encoderTop
 encoderTop_comp12: component encoderTop
     port map( clk, '1', FMC1_HPC_HA13_P, FMC1_HPC_HA13_N, '1', encoders2(5)(0), encoders2(5)(1), encoders2(5)(2) );
 
-
-
 prescale_comp: component prescaler
     generic map ( prescale => 4000 )
     port map ( clk, preClk );
@@ -418,8 +423,8 @@ prescale_comp_ASR: component prescaler
     port map ( clk, preClkASR );
         	
 ASR_comp: component ASR
-    port map( preClkASR, reset, OSC1output, Note_state, ASR_atk_time, ASR_rls_time, ASR_y );
-    
+    port map( clk, reset, OSC1output, ASR_noteState, ASR_atk_time, ASR_rls_time, ASR_y );
+        
 btn_comp0: component button
     port map( clk, reset, GPIO_SW_S, btn0_out );
 
@@ -431,10 +436,10 @@ btn_comp0: component button
 --	port map(PMOD_0, Reset, Clock_Enable, Uart_send, Uart_Dec);
 	
 --MIDI_dec_comp: component MIDI_Decoder
---	port map(Uart_Dec, Uart_send, Reset, Clock_Enable, Note_data, Note_ready, Note_state_int);
+--	port map(Uart_Dec, Uart_send, Reset, Clock_Enable, Note_data, Note_ready, Note_state);
 	
 --MIDI_to_osc_comp: component MIDI_to_Osc
---	port map(Note_data, Note_state_int, Note_ready, Reset, Clock_Enable, Note_state, Note_out);
+--	port map(Note_data, Note_state, Note_ready, Reset, Clock_Enable, Note_out);
 	
 --ClockEn_comp: component ClockEnable
 --	generic map(DesiredFreq => 312500, ClockFreq => 200000000)
@@ -450,27 +455,32 @@ btn_comp0: component button
     GPIO_LED_2 <= gpioLEDS(2);
     GPIO_LED_3 <= gpioLEDS(3);
     
-    --gpioLEDS(0) <= LFOduty_setting;
-    
     
     --  ENCODERS 1
     FMC1_HPC_HA10_P <= '1';  --  +
     FMC1_HPC_HA10_N <= '0';  --  -
+    
     --  ENCODERS 2
     FMC1_HPC_LA16_P <= '1';  --  +
     FMC1_HPC_LA16_N <= '0';  --  -
 
-            
+
+    --  SWITCHES
+    enablefilter <= FMC1_HPC_HA18_N;
+    LFOduty_enable <= FMC1_HPC_HA18_P;
+    LFOduty_setting <= FMC1_HPC_HA16_N;
+--    FMC1_HPC_HA16_P;
+--    FMC1_HPC_HA15_N;
+--    FMC1_HPC_HA15_P;
+                
+                
     --  FILTER
-    enablefilter <= GPIO_DIP_SW3;
-    cutoff <= cuttReg;   
-    --filterIn <= std_logic_vector(to_signed(to_integer(signed(oscOutput))+to_integer(signed(oscOutput2)), 13));
+    cutoff <= cuttReg;
     filterIn <= OSC1output;
     Q <= to_sfixed(0.7071, Q);
         
         
     --  LFO DUTY
-    LFOduty_enable <= GPIO_DIP_SW2;
     LFOduty_rate  <= std_logic_vector(to_unsigned(LFOduty_rateReg,8));
     LFOduty_depth <= std_logic_vector(to_unsigned(LFOduty_depthReg,7));
     
@@ -478,21 +488,14 @@ btn_comp0: component button
     --  OSCILLATOR 1
     OSC1enable <= '1'; 
     OSC1waveForm <= to_wave(std_logic_vector(to_unsigned(waveReg,3)));
-    --OSC1dutyCycle <= std_logic_vector(to_signed(dutyReg,7));
     OSC1semi <= std_logic_vector(to_signed(semiReg,5));
     
     
-    --  Envelope
-    --ASR_x        <= OSC1output;
---        ASR_atk_time <= "000011001000";--std_logic_vector(to_unsigned(200,12));
---        ASR_rls_time <= "000011001000";--std_logic_vector(to_unsigned(200,12));
-    ASR_atk_time <= std_logic_vector(to_signed(ASR_atk_timeReg,12));
-    ASR_rls_time <= std_logic_vector(to_signed(ASR_rls_timeReg,12));
-    --btn0_in <= GPIO_SW_S;
+    --  ENVELOPE
+    ASR_atk_time <= std_logic_vector(to_signed(ASR_atk_timeReg,16));
+    ASR_rls_time <= std_logic_vector(to_signed(ASR_rls_timeReg,16));
 
-    FMC1_HPC_LA02_P <= preDebug;--preClkASR;
-    
-    
+
     --  LCD Data signal
 --    FMC1_HPC_LA06_P <= LCD_E;
 --    FMC1_HPC_LA06_N <= LCD_RW--    FMC1_HPC_LA07_P <= LCD_RS ;
@@ -513,16 +516,14 @@ btn_comp0: component button
 --    LCD_DATA(5) <= FMC1_HPC_LA03_P;
 --    LCD_DATA(6) <= FMC1_HPC_LA02_N;
 --    LCD_DATA(7) <= FMC1_HPC_LA02_P;
-
---------------------------------------------------------------------------------
----- Constant signals
---------------------------------------------------------------------------------
-
-
 --    gpioLEDS(0) <= LCD_led(0);
 --    gpioLEDS(1) <= LCD_led(1);
 --    gpioLEDS(2) <= LCD_led(2);
 --    gpioLEDS(3) <= LCD_led(3);
+
+--------------------------------------------------------------------------------
+---- Constant signals
+--------------------------------------------------------------------------------
 
 --btn_process:
 --process(clk)
@@ -549,10 +550,8 @@ begin
 
     if rising_edge(clk) then
 
-        if GPIO_SW_N = '1' then 
-        
-            reset <= '0';   
-
+        if GPIO_SW_N = '1' then
+            reset <= '0';
         else
         
             reset <= '1';    
@@ -561,12 +560,13 @@ begin
                 --if DACready = '1' then
                     --DACdata(3 downto 0) <= (OTHERS => '0');
                     if enablefilter = '1' then
+                        DACdata <= (others => '1');
 --                        DACdata(15 downto 4) <= std_logic_vector(signed(filterOut) + 2048);
 --                        DACdata(15 downto 9) <= LFOduty_output;
 --                        DACdata(8 downto 0) <= (OTHERS => '0');
 --                    else
-                            DACdata(15 downto 4) <= std_logic_vector(signed(OSC1output) + 2048);
-                            DACdata(3 downto 0) <= "0000";
+                            --DACdata(15 downto 4) <= std_logic_vector(signed(OSC1output) + 2048);
+                            --DACdata(3 downto 0) <= "0000";
                         else
                             DACdata(15 downto 4) <= std_logic_vector(signed(ASR_y) + 2048);
                             DACdata(3 downto 0) <= "0000";
@@ -589,58 +589,58 @@ begin
 
     if GPIO_SW_N = '1' then
     
-        gpioLEDS(0) <= '0';
-        gpioLEDS(1) <= '0';
+        --gpioLEDS(0) <= '0';
+        --gpioLEDS(1) <= '0';
         
     elsif rising_edge(clk) then
 
-            if encoders2(0)(0) = '1' then
-                if encoders2(0)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                else
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                end if;
+        if encoders2(0)(0) = '1' then
+            if encoders2(0)(1) = '1' then
+                gpioLEDS(0) <= not(gpioLEDS(0));
+            else
+                gpioLEDS(1) <= not(gpioLEDS(1));
             end if;
-    
-            if encoders2(1)(0) = '1' then
-                if encoders2(1)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                else
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                end if;
+        end if;
+
+        if encoders2(1)(0) = '1' then
+            if encoders2(1)(1) = '1' then
+                gpioLEDS(0) <= not(gpioLEDS(0));
+            else
+                gpioLEDS(1) <= not(gpioLEDS(1));
             end if;
-            
-            if encoders2(2)(0) = '1' then
-                if encoders2(2)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                else
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                end if;
+        end if;
+        
+        if encoders2(2)(0) = '1' then
+            if encoders2(2)(1) = '1' then
+                gpioLEDS(0) <= not(gpioLEDS(0));
+            else
+                gpioLEDS(1) <= not(gpioLEDS(1));
             end if;
-            
-            if encoders2(3)(0) = '1' then
-                if encoders2(3)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                else
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                end if;
+        end if;
+        
+        if encoders2(3)(0) = '1' then
+            if encoders2(3)(1) = '1' then
+                gpioLEDS(0) <= not(gpioLEDS(0));
+            else
+                gpioLEDS(1) <= not(gpioLEDS(1));
             end if;
-            
-            if encoders2(4)(0) = '1' then
-                if encoders2(4)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                else
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                end if;
+        end if;
+        
+        if encoders2(4)(0) = '1' then
+            if encoders2(4)(1) = '1' then
+                gpioLEDS(0) <= not(gpioLEDS(0));
+            else
+                gpioLEDS(1) <= not(gpioLEDS(1));
             end if;
-    
-            if encoders2(5)(0) = '1' then
-                if encoders2(5)(1) = '1' then
-                    gpioLEDS(0) <= not(gpioLEDS(0));
-                else
-                    gpioLEDS(1) <= not(gpioLEDS(1));
-                end if;
+        end if;
+
+        if encoders2(5)(0) = '1' then
+            if encoders2(5)(1) = '1' then
+                gpioLEDS(0) <= not(gpioLEDS(0));
+            else
+                gpioLEDS(1) <= not(gpioLEDS(1));
             end if;
+        end if;
                                             
     end if;
 end process;
@@ -655,28 +655,29 @@ begin
         
     elsif rising_edge(clk) then
     
-        if btn0_out = '1' then
+        ASR_noteState <= btn0_out;
+--        if btn0_out = '1' then
         
-            if key_state_atk = '0' then
-                ASR_attack <= '1';
-                key_state_atk <= '1';
-                --gpioLEDS(1) <= not(gpioLEDS(1));
-            else
-                ASR_attack <= '0';
-            end if;
+--            if key_state_atk = '0' then
+--                ASR_noteState <= '1';
+--                key_state_atk <= '1';
+--                --gpioLEDS(1) <= not(gpioLEDS(1));
+--            else
+--                ASR_noteState <= '0';
+--            end if;
             
-            key_state_rel <= '1';
+--            key_state_rel <= '1';
             
-        else
+--        else
             
-            key_state_atk <= '0';
+--            key_state_atk <= '0';
             
-            if key_state_rel = '1' 
-            then ASR_release <= '1'; key_state_rel <= '0'; --gpioLEDS(1) <= not(gpioLEDS(1));
-            else ASR_release <= '0';
-            end if;
+--            if key_state_rel = '1' 
+--            then ASR_release <= '1'; key_state_rel <= '0'; --gpioLEDS(1) <= not(gpioLEDS(1));
+--            else ASR_release <= '0';
+--            end if;
             
-        end if;        
+--        end if;        
     end if;
         
 end process;
@@ -687,23 +688,23 @@ begin
 
     if GPIO_SW_N = '1' then
     
-        ASR_atk_timeReg <= 1000;
+        ASR_atk_timeReg <= 10000;
         
     elsif rising_edge(clk) then
     
         --  ENVELOPE ATTACK
-        if encoders(0)(0) = '1' then
-            if encoders(0)(1) = '1' then
-                if ASR_atk_timeReg < 4095 then
-                    ASR_atk_timeReg <= ASR_atk_timeReg + 100;
+        if encoders2(0)(0) = '1' then
+            if encoders2(0)(1) = '1' then
+                if ASR_atk_timeReg < 65535 then
+                    ASR_atk_timeReg <= ASR_atk_timeReg + 1000;
                 else
-                    ASR_atk_timeReg <= 4095;
+                    ASR_atk_timeReg <= 65535;
                 end if;
             else
-                if ASR_atk_timeReg > 200 then
-                    ASR_atk_timeReg <= ASR_atk_timeReg - 100;
+                if ASR_atk_timeReg > 1000 then
+                    ASR_atk_timeReg <= ASR_atk_timeReg - 1000;
                 else
-                    ASR_atk_timeReg <= 100;
+                    ASR_atk_timeReg <= 1000;
                 end if;
             end if;
         end if;
@@ -716,57 +717,114 @@ begin
 
     if GPIO_SW_N = '1' then
     
-        ASR_rls_timeReg <= 1000;
+        ASR_rls_timeReg <= 10000;
         
     elsif rising_edge(clk) then
     
         --  ENVELOPE ATTACK
-        if encoders(1)(0) = '1' then
-            if encoders(1)(1) = '1' then
-                if ASR_rls_timeReg < 4095 then
-                    ASR_rls_timeReg <= ASR_rls_timeReg + 100;
+        if encoders2(1)(0) = '1' then
+            if encoders2(1)(1) = '1' then
+                if ASR_rls_timeReg < 65535 then
+                    ASR_rls_timeReg <= ASR_rls_timeReg + 1000;
                 else
-                    ASR_rls_timeReg <= 4095;
+                    ASR_rls_timeReg <= 65535;
                 end if;
             else
-                if ASR_rls_timeReg > 200 then
-                    ASR_rls_timeReg <= ASR_rls_timeReg - 100;
+                if ASR_rls_timeReg > 1000 then
+                    ASR_rls_timeReg <= ASR_rls_timeReg - 1000;
                 else
-                    ASR_rls_timeReg <= 100;
+                    ASR_rls_timeReg <= 1000;
                 end if;
             end if;
         end if;
     end if;
 end process;
 
---enc_cut_process:
---process(clk)
---begin
-
---    if GPIO_SW_N = '1' then
+LFO1_process:
+process(clk)
+begin    --  RESET
+    if GPIO_SW_N = '1' then 
     
---        cuttReg <= 1000;
+        LFOduty_rateReg  <=  0;     --  Lowest frequency
+        LFOduty_depthReg <= 50;     --  Starts at 6, to make it count to 50 => set to 44
+        LFOduty_waveForm <= '0';
+        --LFOduty_setting  <= '0';
         
---    elsif rising_edge(clk) then
+    elsif rising_edge(clk) then
     
---        --  CUTTOFF
---        if encoders(1)(0) = '1' then
---            if encoders(1)(1) = '1' then
---                if cuttReg < 4901 then
---                    cuttReg <= cuttReg + 100;
---                else
---                    cuttReg <= 5000;
---                end if;
---            else
---                if cuttReg > 99 then
---                    cuttReg <= cuttReg - 100;
---                else
---                    cuttReg <= 0;
---                end if;
---            end if;
+        LFOduty_waveForm <= '0';
+        
+        --  LFO1: Dutycycle for OSC1
+        if encoders(0)(0) = '1' then
+            if encoders(0)(1) = '1' then            --  Increase
+                if LFOduty_setting = '0' then       --  Rate
+                    if LFOduty_rateReg < 198 then
+                        LFOduty_rateReg <= LFOduty_rateReg + 1;
+                        LFOduty_restart <= '1';
+                    end if;
+                else                                --  Depth
+                    if LFOduty_depthReg < 88 then
+                        LFOduty_depthReg <= LFOduty_depthReg + 1;
+                        LFOduty_restart <= '1';
+                    end if;
+                end if;
+            else                                    --  Decrease
+                if LFOduty_setting = '0' then       --  Rate
+                    if LFOduty_rateReg > 0 then
+                        LFOduty_rateReg <= LFOduty_rateReg - 1;
+                        LFOduty_restart <= '1';
+                    end if;
+                else                                --  Depth
+                    if LFOduty_depthReg > 6 then
+                        LFOduty_depthReg <= LFOduty_depthReg - 1;
+                        LFOduty_restart <= '1';
+                    end if;
+                end if;
+            end if;
+        else
+            LFOduty_restart <= '0';
+        end if;
+        
+--        if encoders(0)(2) = '1'
+--        then LFOduty_setting <= not(LFOduty_setting);
 --        end if;
---    end if;
---end process;
+        
+        if LFOduty_enable = '0' 
+        then OSC1dutyCycle <= std_logic_vector(to_unsigned(dutyReg,7));
+        else OSC1dutyCycle <= LFOduty_output;
+        end if;
+            
+    end if;
+end process;
+
+enc_cut_process:
+process(clk)
+begin
+
+    if GPIO_SW_N = '1' then
+    
+        cuttReg <= 1000;
+        
+    elsif rising_edge(clk) then
+    
+        --  CUTTOFF
+        if encoders(1)(0) = '1' then
+            if encoders(1)(1) = '1' then
+                if cuttReg < 4901 then
+                    cuttReg <= cuttReg + 100;
+                else
+                    cuttReg <= 5000;
+                end if;
+            else
+                if cuttReg > 99 then
+                    cuttReg <= cuttReg - 100;
+                else
+                    cuttReg <= 0;
+                end if;
+            end if;
+        end if;
+    end if;
+end process;
 
 enc_duty_process:
 process(clk)
@@ -884,61 +942,4 @@ begin    --  RESET
     end if;
 end process;        
         
---LFO1_process:
---process(clk)
---begin    --  RESET
---    if GPIO_SW_N = '1' then 
-    
---        LFOduty_rateReg  <=  0;     --  Lowest frequency
---        LFOduty_depthReg <= 50;     --  Starts at 6, to make it count to 50 => set to 44
---        LFOduty_waveForm <= '0';
---        LFOduty_setting  <= '0';
-        
---    elsif rising_edge(clk) then
-    
---        LFOduty_waveForm <= '0';
-        
---        --  LFO1: Dutycycle for OSC1
---        if encoders(0)(0) = '1' then
---            if encoders(0)(1) = '1' then            --  Increase
---                if LFOduty_setting = '0' then       --  Rate
---                    if LFOduty_rateReg < 198 then
---                        LFOduty_rateReg <= LFOduty_rateReg + 1;
---                        LFOduty_restart <= '1';
---                    end if;
---                else                                --  Depth
---                    if LFOduty_depthReg < 88 then
---                        LFOduty_depthReg <= LFOduty_depthReg + 1;
---                        LFOduty_restart <= '1';
---                    end if;
---                end if;
---            else                                    --  Decrease
---                if LFOduty_setting = '0' then       --  Rate
---                    if LFOduty_rateReg > 0 then
---                        LFOduty_rateReg <= LFOduty_rateReg - 1;
---                        LFOduty_restart <= '1';
---                    end if;
---                else                                --  Depth
---                    if LFOduty_depthReg > 6 then
---                        LFOduty_depthReg <= LFOduty_depthReg - 1;
---                        LFOduty_restart <= '1';
---                    end if;
---                end if;
---            end if;
---        else
---            LFOduty_restart <= '0';
---        end if;
-        
---        if encoders(0)(2) = '1' then
---            LFOduty_setting <= not(LFOduty_setting);
---        end if;
-        
---        if LFOduty_enable = '0' then
---            OSC1dutyCycle <= std_logic_vector(to_unsigned(dutyReg,7));
---        else
---            OSC1dutyCycle <= LFOduty_output;
---        end if;
-            
---    end if;
---end process;
 end arch_top;
