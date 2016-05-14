@@ -105,10 +105,10 @@ entity top is
         FMC1_HPC_HA13_N : in std_logic;
         
         --  MIDI IN
-        PMOD_0          : in std_logic
+        PMOD_0          : in std_logic;
         
         --  LCD (LVCMOS25)
---        FMC1_HPC_LA02_P : out std_logic	--  DB7
+        FMC1_HPC_LA02_P : out std_logic	--  DB7
 --        FMC1_HPC_LA02_N : out std_logic;	--  ...
 --        FMC1_HPC_LA03_P : out std_logic;	--  ...     
 --        FMC1_HPC_LA03_N : out std_logic;	--  ...
@@ -321,7 +321,23 @@ architecture arch_top of top is
     signal Note_ready   : std_logic;
     signal Note_state   : std_logic;
     signal Note_out     : std_logic_vector(7 downto 0);
-	
+
+    --  I2S component
+    component I2S_transmitter is
+    generic( WIDTH:INTEGER:=12 );
+    port( clk  : in std_logic;
+          data : in std_logic_vector(WIDTH-1 downto 0);
+          sck  : out std_logic;
+          ws   : out std_logic;
+          sd   : out std_logic) ;
+    end component;
+    
+    signal I2S_data : std_logic_vector(12-1 downto 0);
+    signal I2S_sck : std_logic;
+    signal I2S_ws : std_logic;
+    signal I2S_sd : std_logic;
+    
+    	
     --  LCD component
 --    component LCD is
 --    port( clk    : in  std_logic;
@@ -425,8 +441,19 @@ prescale_comp_ASR: component prescaler
 ASR_comp: component ASR
     port map( clk, reset, OSC1output, ASR_noteState, ASR_atk_time, ASR_rls_time, ASR_y );
         
-btn_comp0: component button
-    port map( clk, reset, GPIO_SW_S, btn0_out );
+--btn_comp0: component button
+--    port map( clk, reset, GPIO_SW_S, btn0_out );
+
+I2S_comp: component I2S_transmitter 
+	generic map ( WIDTH => 12 )
+	port map( preClk, I2S_data, I2S_sck, I2S_ws, I2S_sd );
+    
+--	clk:in STD_LOGIC;
+--	data:in STD_LOGIC_VECTOR(WIDTH-1 downto 0);
+--	sck:out STD_LOGIC;
+--	ws:out STD_LOGIC;
+--	sd:out STD_LOGIC);
+
 
 --LCD_comp: component LCD
 --	--port map( clk, reset, FMC1_HPC_LA07_P, FMC1_HPC_LA06_N, FMC1_HPC_LA06_P, LCD_DATA, LCD_cmd, LCD_int, LCD_write, LCD_init, LCD_led );
@@ -494,6 +521,11 @@ btn_comp0: component button
     --  ENVELOPE
     ASR_atk_time <= std_logic_vector(to_signed(ASR_atk_timeReg,16));
     ASR_rls_time <= std_logic_vector(to_signed(ASR_rls_timeReg,16));
+
+
+    --  I2S
+    FMC1_HPC_LA02_P <= I2S_sd;
+    I2S_data <= "111111000000";
 
 
     --  LCD Data signal
@@ -655,7 +687,7 @@ begin
         
     elsif rising_edge(clk) then
     
-        ASR_noteState <= btn0_out;
+        ASR_noteState <= GPIO_SW_S;
 --        if btn0_out = '1' then
         
 --            if key_state_atk = '0' then
@@ -695,7 +727,7 @@ begin
         --  ENVELOPE ATTACK
         if encoders2(0)(0) = '1' then
             if encoders2(0)(1) = '1' then
-                if ASR_atk_timeReg < 65535 then
+                if ASR_atk_timeReg < 64535 then
                     ASR_atk_timeReg <= ASR_atk_timeReg + 1000;
                 else
                     ASR_atk_timeReg <= 65535;
@@ -724,7 +756,7 @@ begin
         --  ENVELOPE ATTACK
         if encoders2(1)(0) = '1' then
             if encoders2(1)(1) = '1' then
-                if ASR_rls_timeReg < 65535 then
+                if ASR_rls_timeReg < 64535 then
                     ASR_rls_timeReg <= ASR_rls_timeReg + 1000;
                 else
                     ASR_rls_timeReg <= 65535;
