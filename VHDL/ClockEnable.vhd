@@ -24,7 +24,7 @@ BEGIN
 
 	PROCESS(ClockIn, Reset)
 	BEGIN
-		IF (Reset = '1') THEN
+		IF (Reset = '0') THEN
 			Counter <= 0;
 			ClockInt <= '0';
 

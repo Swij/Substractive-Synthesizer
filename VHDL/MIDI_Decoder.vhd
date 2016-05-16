@@ -34,7 +34,7 @@ BEGIN
 	
 PROCESS(Clock,Reset)
 BEGIN
-	IF(Reset = '1') THEN
+	IF(Reset = '0') THEN
 		
 		Data_acc <= (OTHERS => '0');
 		Data_out <= (OTHERS => '0');
@@ -75,16 +75,16 @@ BEGIN
 					
 				WHEN Others =>
 					
-					IF(Data_in = Prev_note_reg) THEN
-						Byte_cnt <= 1;
-						Note_state <= NOT(Note_state);
-						MIDI_Decoder_state <= Recieve;
-						Data_acc(15 DOWNTO 8) <= Prev_note_reg;
+--					IF(Data_in = Prev_note_reg) THEN
+--						Byte_cnt <= 1;
+--						Note_state <= NOT(Note_state);
+--						MIDI_Decoder_state <= Recieve;
+--						Data_acc(15 DOWNTO 8) <= Prev_note_reg;
 
-					ELSE
+--					ELSE
 	
 						MIDI_Decoder_state <= Idle;
-					END IF;
+					--END IF;
 
 				END CASE;
 			

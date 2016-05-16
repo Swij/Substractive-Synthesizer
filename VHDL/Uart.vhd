@@ -17,7 +17,8 @@ ENTITY Uart IS
 		Data_in		: in STD_LOGIC;
 		Reset		: in STD_LOGIC;
 		Clock		: in STD_LOGIC;
-		Data_send	: out STD_LOGIC;
+        Data_send    : out STD_LOGIC;
+        LED    : out STD_LOGIC;
 		Data_out	: out STD_LOGIC_VECTOR(7 DOWNTO 0)
 	);
 END Uart;
@@ -32,12 +33,15 @@ ARCHITECTURE Uart_Arch OF Uart IS
 	SIGNAL Bit_counter : INTEGER RANGE 0 to 8;
 	SIGNAL Scalar : INTEGER RANGE 0 to 11 := 0;
 	SIGNAL Sample : INTEGER RANGE 0 to 11 := 0;
-	
+	signal uart_led : std_logic;
 BEGIN
+    
+    LED <= uart_led;
+
 PROCESS(Clock, Reset)
 
 	BEGIN
-	IF (RESET = '1') THEN							-- Asyncronous Reset of state and accumulated Data
+	IF (RESET = '0') THEN							-- Asyncronous Reset of state and accumulated Data
 		
 		Uart_state <= Idle;							
 		Data_acc <= (OTHERS => '0');
@@ -45,6 +49,7 @@ PROCESS(Clock, Reset)
 		Bit_counter <= 0;
 		Data_send <= '0';
 		Scalar <= 0;
+		uart_led <= '0';
 	
 	ELSIF rising_edge(Clock) THEN					-- Triggering once every sent bit
 			
@@ -99,8 +104,9 @@ PROCESS(Clock, Reset)
 				Scalar <= 0;
 				Uart_state <= Idle;
 				Data_send <= '1';
-							
+			    uart_led <= not(uart_led);				
 			END IF;
+			
 		END CASE;
 	END IF;
 END PROCESS;

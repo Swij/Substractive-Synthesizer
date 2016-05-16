@@ -106,6 +106,9 @@ entity top is
         
         --  MIDI IN
         PMOD_0          : in std_logic;
+        PMOD_1          : out std_logic;
+        PMOD_2          : out std_logic;
+        PMOD_3          : out std_logic;
         
         --  LCD (LVCMOS25)
         FMC1_HPC_LA02_P : out std_logic	--  DB7
@@ -278,11 +281,22 @@ architecture arch_top of top is
     signal btn0_out : std_logic;
         
 	-- MIDI components
+        
+    component ClockEnable is
+    generic( DesiredFreq : integer;
+             ClockFreq : integer);
+    port(
+        ClockIn  : in std_logic;
+        Reset    : in std_logic;
+        ClockOut : out std_logic );
+    end component;
+    
 	component Uart is
     port( Data_in   : in std_logic;
           Reset     : in std_logic;
           Clock     : in std_logic;
           Data_send : out std_logic;
+          LED       : out std_logic;
           Data_out  : out std_logic_vector(7 downto 0) );
 	end component;
 	
@@ -302,24 +316,17 @@ architecture arch_top of top is
           Data_ready : in std_logic;
           Reset      : in std_logic;
           Clock      : in std_logic;
+          Note_State : out STD_LOGIC;
           Note       : out std_logic_vector(7 downto 0) );
 	end component;
-	
-	component ClockEnable is
-    generic( DesiredFreq : integer;
-             ClockFreq : integer);
-    port(
-        ClockIn  : in std_logic;
-        Reset    : in std_logic;
-        ClockOut : out std_logic );
-    end component;
 	
     signal Clock_Enable : std_logic;
     signal Uart_send    : std_logic;
     signal Uart_Dec     : std_logic_vector(7 downto 0);
     signal Note_data    : std_logic_vector(15 downto 0);
     signal Note_ready   : std_logic;
-    signal Note_state   : std_logic;
+        signal Note_state   : std_logic;
+        signal uartLED   : std_logic;
     signal Note_out     : std_logic_vector(7 downto 0);
 
     --  I2S component
@@ -472,19 +479,19 @@ I2S_comp: component I2S_transmitter
 --	--port map( clk, reset, FMC1_HPC_LA07_P, FMC1_HPC_LA06_N, FMC1_HPC_LA06_P, LCD_DATA, LCD_cmd, LCD_int, LCD_write, LCD_init, LCD_led );
 --	port map( clk, reset, LCD_RS, LCD_RW, LCD_E, LCD_DATA, LCD_cmd, LCD_int, LCD_write, LCD_init, LCD_led );
 
---Uart_comp: component Uart
---	port map(PMOD_0, Reset, Clock_Enable, Uart_send, Uart_Dec);
-	
---MIDI_dec_comp: component MIDI_Decoder
---	port map(Uart_Dec, Uart_send, Reset, Clock_Enable, Note_data, Note_ready, Note_state);
-	
---MIDI_to_osc_comp: component MIDI_to_Osc
---	port map(Note_data, Note_state, Note_ready, Reset, Clock_Enable, Note_out);
-	
---ClockEn_comp: component ClockEnable
---	generic map(DesiredFreq => 312500, ClockFreq => 200000000)
---	port map(Clk, Reset, Clock_Enable);
+ClockEn_comp: component ClockEnable
+	generic map(DesiredFreq => 312500, ClockFreq => 200000000)
+	port map(clk, reset, Clock_Enable);
 
+Uart_comp: component Uart
+	port map(PMOD_0, reset, Clock_Enable, Uart_send, uartLED, Uart_Dec);
+	
+MIDI_dec_comp: component MIDI_Decoder
+	port map(Uart_Dec, Uart_send, reset, Clock_Enable, Note_data, Note_ready, Note_state);
+	
+MIDI_to_osc_comp: component MIDI_to_Osc
+	port map(Note_data, Note_state, Note_ready, reset, Clock_Enable, ASR_noteState, Note_out);
+	
 --------------------------------------------------------------------------------
 ---- GPIO coupling
 --------------------------------------------------------------------------------
@@ -529,13 +536,16 @@ I2S_comp: component I2S_transmitter
     OSC1enable <= '1'; 
     OSC1waveForm <= to_wave(std_logic_vector(to_unsigned(waveReg,3)));
     OSC1semi <= std_logic_vector(to_signed(semiReg,5));
-    
+    OSC1note <= Note_out;
     
     --  ENVELOPE
     ASR_atk_time <= std_logic_vector(to_signed(ASR_atk_timeReg,16));
     ASR_rls_time <= std_logic_vector(to_signed(ASR_rls_timeReg,16));
-
-
+    
+    gpioLEDS(0) <= ASR_noteState;
+    PMOD_1 <= PMOD_0;
+    
+    PMOD_2 <= uartLED;
     --  I2S
     FMC1_HPC_LA02_P <= I2S_sd;
     I2S_data <= "111111000000";
@@ -628,104 +638,104 @@ begin
     
 end process;
 
-encoders2_process:
-process(clk)
-begin
+--encoders2_process:
+--process(clk)
+--begin
 
-    if GPIO_SW_N = '1' then
+--    if GPIO_SW_N = '1' then
     
-        --gpioLEDS(0) <= '0';
-        --gpioLEDS(1) <= '0';
+--        --gpioLEDS(0) <= '0';
+--        --gpioLEDS(1) <= '0';
         
-    elsif rising_edge(clk) then
+--    elsif rising_edge(clk) then
 
-        if encoders2(0)(0) = '1' then
-            if encoders2(0)(1) = '1' then
-                gpioLEDS(0) <= not(gpioLEDS(0));
-            else
-                gpioLEDS(1) <= not(gpioLEDS(1));
-            end if;
-        end if;
-
-        if encoders2(1)(0) = '1' then
-            if encoders2(1)(1) = '1' then
-                gpioLEDS(0) <= not(gpioLEDS(0));
-            else
-                gpioLEDS(1) <= not(gpioLEDS(1));
-            end if;
-        end if;
-        
-        if encoders2(2)(0) = '1' then
-            if encoders2(2)(1) = '1' then
-                gpioLEDS(0) <= not(gpioLEDS(0));
-            else
-                gpioLEDS(1) <= not(gpioLEDS(1));
-            end if;
-        end if;
-        
-        if encoders2(3)(0) = '1' then
-            if encoders2(3)(1) = '1' then
-                gpioLEDS(0) <= not(gpioLEDS(0));
-            else
-                gpioLEDS(1) <= not(gpioLEDS(1));
-            end if;
-        end if;
-        
-        if encoders2(4)(0) = '1' then
-            if encoders2(4)(1) = '1' then
-                gpioLEDS(0) <= not(gpioLEDS(0));
-            else
-                gpioLEDS(1) <= not(gpioLEDS(1));
-            end if;
-        end if;
-
-        if encoders2(5)(0) = '1' then
-            if encoders2(5)(1) = '1' then
-                gpioLEDS(0) <= not(gpioLEDS(0));
-            else
-                gpioLEDS(1) <= not(gpioLEDS(1));
-            end if;
-        end if;
-                                            
-    end if;
-end process;
-
-midi_key_process:
-process(clk)
-begin
-
-    if GPIO_SW_N = '1' then
-        
-        --gpioLEDS(1) <= '0';
-        
-    elsif rising_edge(clk) then
-    
-        ASR_noteState <= GPIO_SW_S;
---        if btn0_out = '1' then
-        
---            if key_state_atk = '0' then
---                ASR_noteState <= '1';
---                key_state_atk <= '1';
---                --gpioLEDS(1) <= not(gpioLEDS(1));
+--        if encoders2(0)(0) = '1' then
+--            if encoders2(0)(1) = '1' then
+--                gpioLEDS(0) <= not(gpioLEDS(0));
 --            else
---                ASR_noteState <= '0';
+--                gpioLEDS(1) <= not(gpioLEDS(1));
 --            end if;
-            
---            key_state_rel <= '1';
-            
---        else
-            
---            key_state_atk <= '0';
-            
---            if key_state_rel = '1' 
---            then ASR_release <= '1'; key_state_rel <= '0'; --gpioLEDS(1) <= not(gpioLEDS(1));
---            else ASR_release <= '0';
+--        end if;
+
+--        if encoders2(1)(0) = '1' then
+--            if encoders2(1)(1) = '1' then
+--                gpioLEDS(0) <= not(gpioLEDS(0));
+--            else
+--                gpioLEDS(1) <= not(gpioLEDS(1));
 --            end if;
-            
---        end if;        
-    end if;
+--        end if;
         
-end process;
+--        if encoders2(2)(0) = '1' then
+--            if encoders2(2)(1) = '1' then
+--                gpioLEDS(0) <= not(gpioLEDS(0));
+--            else
+--                gpioLEDS(1) <= not(gpioLEDS(1));
+--            end if;
+--        end if;
+        
+--        if encoders2(3)(0) = '1' then
+--            if encoders2(3)(1) = '1' then
+--                gpioLEDS(0) <= not(gpioLEDS(0));
+--            else
+--                gpioLEDS(1) <= not(gpioLEDS(1));
+--            end if;
+--        end if;
+        
+--        if encoders2(4)(0) = '1' then
+--            if encoders2(4)(1) = '1' then
+--                gpioLEDS(0) <= not(gpioLEDS(0));
+--            else
+--                gpioLEDS(1) <= not(gpioLEDS(1));
+--            end if;
+--        end if;
+
+--        if encoders2(5)(0) = '1' then
+--            if encoders2(5)(1) = '1' then
+--                gpioLEDS(0) <= not(gpioLEDS(0));
+--            else
+--                gpioLEDS(1) <= not(gpioLEDS(1));
+--            end if;
+--        end if;
+                                            
+--    end if;
+--end process;
+
+--midi_key_process:
+--process(clk)
+--begin
+
+--    if GPIO_SW_N = '1' then
+        
+--        --gpioLEDS(1) <= '0';
+        
+--    elsif rising_edge(clk) then
+    
+--        ASR_noteState <= GPIO_SW_S;
+----        if btn0_out = '1' then
+        
+----            if key_state_atk = '0' then
+----                ASR_noteState <= '1';
+----                key_state_atk <= '1';
+----                --gpioLEDS(1) <= not(gpioLEDS(1));
+----            else
+----                ASR_noteState <= '0';
+----            end if;
+            
+----            key_state_rel <= '1';
+            
+----        else
+            
+----            key_state_atk <= '0';
+            
+----            if key_state_rel = '1' 
+----            then ASR_release <= '1'; key_state_rel <= '0'; --gpioLEDS(1) <= not(gpioLEDS(1));
+----            else ASR_release <= '0';
+----            end if;
+            
+----        end if;        
+--    end if;
+        
+--end process;
     
 env_atk_process:
 process(clk)
@@ -960,31 +970,31 @@ begin
             
 end process;
 
-enc_note_process:
-process(clk)
-begin    --  RESET
-    if GPIO_SW_N = '1' then
+--enc_note_process:
+--process(clk)
+--begin    --  RESET
+--    if GPIO_SW_N = '1' then
     
-        OSC1note <= "01010101";
+--        OSC1note <= "01010101";
         
-    elsif rising_edge(clk) then
+--    elsif rising_edge(clk) then
     
-        if encoders(5)(0) = '1' then
-            if encoders(5)(1) = '1' then
-                if unsigned(OSC1note) < 95 then
-                    OSC1note <= std_logic_vector(unsigned(OSC1note) + 1);
-                else
-                    OSC1note <= std_logic_vector(to_unsigned(95,8));
-                end if;    
-            else
-                if unsigned(OSC1note) > 0 then
-                    OSC1note <= std_logic_vector(unsigned(OSC1note) - 1);
-                else
-                    OSC1note <= (OTHERS => '0');
-                end if;    
-            end if;
-        end if;
-    end if;
-end process;        
+--        if encoders(5)(0) = '1' then
+--            if encoders(5)(1) = '1' then
+--                if unsigned(OSC1note) < 95 then
+--                    OSC1note <= std_logic_vector(unsigned(OSC1note) + 1);
+--                else
+--                    OSC1note <= std_logic_vector(to_unsigned(95,8));
+--                end if;    
+--            else
+--                if unsigned(OSC1note) > 0 then
+--                    OSC1note <= std_logic_vector(unsigned(OSC1note) - 1);
+--                else
+--                    OSC1note <= (OTHERS => '0');
+--                end if;    
+--            end if;
+--        end if;
+--    end if;
+--end process;        
         
 end arch_top;

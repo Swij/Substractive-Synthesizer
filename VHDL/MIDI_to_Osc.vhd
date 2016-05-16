@@ -25,7 +25,7 @@ BEGIN
 	PROCESS(Clock, Reset)
 	BEGIN
 		
-		IF (Reset = '1') THEN
+		IF (Reset = '0') THEN
 			Note <= (OTHERS => '0');
 			Note_int <= 0;
 			Velo_int <= 0;
