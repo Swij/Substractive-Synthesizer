@@ -1,6 +1,8 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+--  This top module combines the encoder component with the debouncer.
+
 entity encoderTop is
     port(
         clk    : in STD_LOGIC;

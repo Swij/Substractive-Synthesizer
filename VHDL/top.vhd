@@ -358,6 +358,33 @@ architecture arch_top of top is
           rdy_conversion : out std_logic );
     end component;
     
+    --  MCP3203 Setting
+    --  Initiated with 4 bits.
+    --  | START | SGL/DIFF | ODD/SIGN | MSBF |
+    --  START := 1
+    --  SGL/DIFF := Single-Ended or Pseudo-Differential mode.
+    --  ODD/SIGN := Selects which channel in Single-Ended mode
+    --               and polarity in Pseudo-Differential mode.
+    --  MS BF := MSB Format only or LSB format after MSB.
+    --
+    --  Following sets the ADC to:
+    --  START
+    --  Single-Ended Mode
+    --  ODD/SIGN := 1 ==>
+    --      Channel 0 := -
+    --      Channel 1 := +
+    --  MSB Format Only    
+    
+    signal ADC_cs : std_logic;
+    signal ADC_sck : std_logic;
+    signal ADC_si : std_logic;
+    signal ADC_so : std_logic;
+    signal ADC_conversion : std_logic_vector(12-1 downto 0);
+    constant ADC_settings : std_logic_vector(3 downto 0) := "1101";
+    signal ADC_get : std_logic;
+    signal ADC_rdy : std_logic;
+    signal preClkADC : std_logic;
+    signal ADC_start : std_logic;
     --  LCD component
 --    component LCD is
 --    port( clk    : in  std_logic;
@@ -423,23 +450,23 @@ encoderTop_comp5: component encoderTop
 encoderTop_comp6: component encoderTop
     port map( clk, '1', FMC1_HPC_HA09_N, FMC1_HPC_HA19_P, FMC1_HPC_HA19_N, encoders(5)(0), encoders(5)(1), encoders(5)(2) );
      
-encoderTop_comp7: component encoderTop
-    port map( clk, '1', FMC1_HPC_LA10_P, FMC1_HPC_LA10_N, '1', encoders2(0)(0), encoders2(0)(1), encoders2(0)(2) );
+--encoderTop_comp7: component encoderTop
+--    port map( clk, '1', FMC1_HPC_LA10_P, FMC1_HPC_LA10_N, '1', encoders2(0)(0), encoders2(0)(1), encoders2(0)(2) );
         
-encoderTop_comp8: component encoderTop
-    port map( clk, '1', FMC1_HPC_LA11_P, FMC1_HPC_LA11_N, '1', encoders2(1)(0), encoders2(1)(1), encoders2(1)(2) );
+--encoderTop_comp8: component encoderTop
+--    port map( clk, '1', FMC1_HPC_LA11_P, FMC1_HPC_LA11_N, '1', encoders2(1)(0), encoders2(1)(1), encoders2(1)(2) );
     
-encoderTop_comp9: component encoderTop
-    port map( clk, '1', FMC1_HPC_LA12_P, FMC1_HPC_LA12_N, '1', encoders2(2)(0), encoders2(2)(1), encoders2(2)(2) );
+--encoderTop_comp9: component encoderTop
+--    port map( clk, '1', FMC1_HPC_LA12_P, FMC1_HPC_LA12_N, '1', encoders2(2)(0), encoders2(2)(1), encoders2(2)(2) );
     
-encoderTop_comp10: component encoderTop
-    port map( clk, '1', FMC1_HPC_HA11_P, FMC1_HPC_HA11_N, '1', encoders2(3)(0), encoders2(3)(1), encoders2(3)(2) );
+--encoderTop_comp10: component encoderTop
+--    port map( clk, '1', FMC1_HPC_HA11_P, FMC1_HPC_HA11_N, '1', encoders2(3)(0), encoders2(3)(1), encoders2(3)(2) );
    
-encoderTop_comp11: component encoderTop
-    port map( clk, '1', FMC1_HPC_LA14_P, FMC1_HPC_LA14_N, '1', encoders2(4)(0), encoders2(4)(1), encoders2(4)(2) );
+--encoderTop_comp11: component encoderTop
+--    port map( clk, '1', FMC1_HPC_LA14_P, FMC1_HPC_LA14_N, '1', encoders2(4)(0), encoders2(4)(1), encoders2(4)(2) );
     
-encoderTop_comp12: component encoderTop
-    port map( clk, '1', FMC1_HPC_HA13_P, FMC1_HPC_HA13_N, '1', encoders2(5)(0), encoders2(5)(1), encoders2(5)(2) );
+--encoderTop_comp12: component encoderTop
+--    port map( clk, '1', FMC1_HPC_HA13_P, FMC1_HPC_HA13_N, '1', encoders2(5)(0), encoders2(5)(1), encoders2(5)(2) );
 
 prescale_comp: component prescaler
     generic map ( prescale => 4000 )
@@ -491,6 +518,14 @@ MIDI_dec_comp: component MIDI_Decoder
 	
 MIDI_to_osc_comp: component MIDI_to_Osc
 	port map(Note_data, Note_state, Note_ready, reset, Clock_Enable, ASR_noteState, Note_out);
+
+ADC_enable_comp: component prescaler
+    generic map ( prescale => 8 )
+    port map ( clk, preClkADC );
+
+ADC_comp: component MCP3202_ADC
+    generic map( WIDTH => 12 )
+    port map( preClkADC, ADC_cs, ADC_sck, ADC_si, ADC_so, ADC_conversion, ADC_settings, ADC_get, ADC_rdy );
 	
 --------------------------------------------------------------------------------
 ---- GPIO coupling
@@ -551,6 +586,12 @@ MIDI_to_osc_comp: component MIDI_to_Osc
     I2S_data <= "111111000000";
 
 
+    --  ADC
+--    ADC_cs
+--    ADC_sck
+--    ADC_si
+--    ADC_so
+    
     --  LCD Data signal
 --    FMC1_HPC_LA06_P <= LCD_E;
 --    FMC1_HPC_LA06_N <= LCD_RW--    FMC1_HPC_LA07_P <= LCD_RS ;
@@ -598,6 +639,23 @@ MIDI_to_osc_comp: component MIDI_to_Osc
 --    end if;
     
 --end process;
+ADC_process:
+process(clk)
+begin
+    if rising_edge(clk) then
+    
+        if preClk = '1' then
+            ADC_start <= '1';
+            ADC_get <= '1';
+        end if;
+    
+        if ADC_start = '1' and ADC_rdy = '0' then
+            ADC_start <= '0';
+            ADC_get <= '0';
+        end if;
+        
+    end if;
+end process;
 
 DAC_process:
 process(clk)
@@ -748,8 +806,8 @@ begin
     elsif rising_edge(clk) then
     
         --  ENVELOPE ATTACK
-        if encoders2(0)(0) = '1' then
-            if encoders2(0)(1) = '1' then
+        if encoders(0)(0) = '1' then
+            if encoders(0)(1) = '1' then
                 if ASR_atk_timeReg < 64535 then
                     ASR_atk_timeReg <= ASR_atk_timeReg + 1000;
                 else
@@ -777,8 +835,8 @@ begin
     elsif rising_edge(clk) then
     
         --  ENVELOPE ATTACK
-        if encoders2(1)(0) = '1' then
-            if encoders2(1)(1) = '1' then
+        if encoders(1)(0) = '1' then
+            if encoders(1)(1) = '1' then
                 if ASR_rls_timeReg < 64535 then
                     ASR_rls_timeReg <= ASR_rls_timeReg + 1000;
                 else
@@ -795,91 +853,91 @@ begin
     end if;
 end process;
 
-LFO1_process:
-process(clk)
-begin    --  RESET
-    if GPIO_SW_N = '1' then 
+--LFO1_process:
+--process(clk)
+--begin    --  RESET
+--    if GPIO_SW_N = '1' then 
     
-        LFOduty_rateReg  <=  0;     --  Lowest frequency
-        LFOduty_depthReg <= 50;     --  Starts at 6, to make it count to 50 => set to 44
-        LFOduty_waveForm <= '0';
-        --LFOduty_setting  <= '0';
+--        LFOduty_rateReg  <=  0;     --  Lowest frequency
+--        LFOduty_depthReg <= 50;     --  Starts at 6, to make it count to 50 => set to 44
+--        LFOduty_waveForm <= '0';
+--        --LFOduty_setting  <= '0';
         
-    elsif rising_edge(clk) then
+--    elsif rising_edge(clk) then
     
-        LFOduty_waveForm <= '0';
+--        LFOduty_waveForm <= '0';
         
-        --  LFO1: Dutycycle for OSC1
-        if encoders(0)(0) = '1' then
-            if encoders(0)(1) = '1' then            --  Increase
-                if LFOduty_setting = '0' then       --  Rate
-                    if LFOduty_rateReg < 198 then
-                        LFOduty_rateReg <= LFOduty_rateReg + 1;
-                        LFOduty_restart <= '1';
-                    end if;
-                else                                --  Depth
-                    if LFOduty_depthReg < 88 then
-                        LFOduty_depthReg <= LFOduty_depthReg + 1;
-                        LFOduty_restart <= '1';
-                    end if;
-                end if;
-            else                                    --  Decrease
-                if LFOduty_setting = '0' then       --  Rate
-                    if LFOduty_rateReg > 0 then
-                        LFOduty_rateReg <= LFOduty_rateReg - 1;
-                        LFOduty_restart <= '1';
-                    end if;
-                else                                --  Depth
-                    if LFOduty_depthReg > 6 then
-                        LFOduty_depthReg <= LFOduty_depthReg - 1;
-                        LFOduty_restart <= '1';
-                    end if;
-                end if;
-            end if;
-        else
-            LFOduty_restart <= '0';
-        end if;
-        
---        if encoders(0)(2) = '1'
---        then LFOduty_setting <= not(LFOduty_setting);
+--        --  LFO1: Dutycycle for OSC1
+--        if encoders(0)(0) = '1' then
+--            if encoders(0)(1) = '1' then            --  Increase
+--                if LFOduty_setting = '0' then       --  Rate
+--                    if LFOduty_rateReg < 198 then
+--                        LFOduty_rateReg <= LFOduty_rateReg + 1;
+--                        LFOduty_restart <= '1';
+--                    end if;
+--                else                                --  Depth
+--                    if LFOduty_depthReg < 88 then
+--                        LFOduty_depthReg <= LFOduty_depthReg + 1;
+--                        LFOduty_restart <= '1';
+--                    end if;
+--                end if;
+--            else                                    --  Decrease
+--                if LFOduty_setting = '0' then       --  Rate
+--                    if LFOduty_rateReg > 0 then
+--                        LFOduty_rateReg <= LFOduty_rateReg - 1;
+--                        LFOduty_restart <= '1';
+--                    end if;
+--                else                                --  Depth
+--                    if LFOduty_depthReg > 6 then
+--                        LFOduty_depthReg <= LFOduty_depthReg - 1;
+--                        LFOduty_restart <= '1';
+--                    end if;
+--                end if;
+--            end if;
+--        else
+--            LFOduty_restart <= '0';
 --        end if;
         
-        if LFOduty_enable = '0' 
-        then OSC1dutyCycle <= std_logic_vector(to_unsigned(dutyReg,7));
-        else OSC1dutyCycle <= LFOduty_output;
-        end if;
-            
-    end if;
-end process;
-
-enc_cut_process:
-process(clk)
-begin
-
-    if GPIO_SW_N = '1' then
-    
-        cuttReg <= 1000;
+----        if encoders(0)(2) = '1'
+----        then LFOduty_setting <= not(LFOduty_setting);
+----        end if;
         
-    elsif rising_edge(clk) then
+--        if LFOduty_enable = '0' 
+--        then OSC1dutyCycle <= std_logic_vector(to_unsigned(dutyReg,7));
+--        else OSC1dutyCycle <= LFOduty_output;
+--        end if;
+            
+--    end if;
+--end process;
+
+--enc_cut_process:
+--process(clk)
+--begin
+
+--    if GPIO_SW_N = '1' then
     
-        --  CUTTOFF
-        if encoders(1)(0) = '1' then
-            if encoders(1)(1) = '1' then
-                if cuttReg < 4901 then
-                    cuttReg <= cuttReg + 100;
-                else
-                    cuttReg <= 5000;
-                end if;
-            else
-                if cuttReg > 99 then
-                    cuttReg <= cuttReg - 100;
-                else
-                    cuttReg <= 0;
-                end if;
-            end if;
-        end if;
-    end if;
-end process;
+--        cuttReg <= 1000;
+        
+--    elsif rising_edge(clk) then
+    
+--        --  CUTTOFF
+--        if encoders(1)(0) = '1' then
+--            if encoders(1)(1) = '1' then
+--                if cuttReg < 4901 then
+--                    cuttReg <= cuttReg + 100;
+--                else
+--                    cuttReg <= 5000;
+--                end if;
+--            else
+--                if cuttReg > 99 then
+--                    cuttReg <= cuttReg - 100;
+--                else
+--                    cuttReg <= 0;
+--                end if;
+--            end if;
+--        end if;
+--    end if;
+--end process;
 
 enc_duty_process:
 process(clk)

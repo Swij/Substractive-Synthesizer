@@ -10,11 +10,12 @@ entity AD5065_DAC is
     port(
         clk   : in std_logic;
         reset : in std_logic;
-        data  : in std_logic_vector(dataBits-1 DOWNTO 0);
-        start : in std_logic;
-        ready : out std_logic;
+        data  : in std_logic_vector(dataBits-1 DOWNTO 0);  --  The output data.
+        start : in std_logic;   --  Start DAC bit.
+        ready : out std_logic;  --  Busy signal, convertion is ongoing.
          
-        SCLK : out std_logic;   
+        --  DAC control signals.
+        SCLK : out std_logic;
         SYNC : out std_logic;
         SDO  : out std_logic;
         LDAC : out std_logic
@@ -24,10 +25,12 @@ end AD5065_DAC;
 
 architecture arch_AD5065_DAC of AD5065_DAC is
 
+    --  State declarations.
     type stateType is (IDLE,  STARTDELAY,HEAD, COMADD, DATAOUT, TAIL, ENDING);--
     signal curr_state, next_state : stateType := IDLE;
     
-    signal clkState : std_logic := '0';
+    signal clkState : std_logic := '0';  --  Internal clock, on/off.
+    signal clkReg : std_logic := '0';    --  Prescaled clock.
     
 --    Address Commands
     constant address : std_logic_vector(3 downto 0) := "0011";
@@ -57,9 +60,8 @@ architecture arch_AD5065_DAC of AD5065_DAC is
       
     constant commaddress : std_logic_vector(7 downto 0) := command & address;
       
-    constant tailData : std_logic_vector(3 downto 0) := "0000";
+    constant tailData : std_logic_vector(3 downto 0) := "0000";  --  Can be further instructions to, sent out at last.
         
-    signal clkReg : std_logic := '0';
       
 begin
       
@@ -69,7 +71,8 @@ begin
 --    be used in asynchronous LDAC update mode, as shown in Figure 3, and the LDAC pin must be brought
 --    high after pulsing. This allows all DAC outputs to simultaneously update.
     --LDAC <= '0';
-      
+
+--  This process changes the current state and scales doen the SCLK out.      
 state_process: process(reset, clk)
 variable clkCnt : natural range 0 to 2 := 0;
 begin
@@ -101,13 +104,13 @@ begin
     
 end process;    
 
-    
+--  This process changes the next state and outputs the data.    
 dac_process: process(reset, clk, curr_state)
-variable clkCnt : natural range 0 TO 1023 := 0;
-variable index  : natural range 0 TO 31 := 0;
-variable cnt1   : natural range 0 TO 7  := 0;
-variable cnt2   : natural range 0 TO 7  := 0;
-variable cnt3   : natural range 0 TO 7  := 0;
+variable clkCnt : natural range 0 TO 1023 := 0;  --  Delay for changing the states.
+variable index  : natural range 0 TO 31 := 0;  --  Position of which bit in the data to send.
+variable cnt1   : natural range 0 TO 7  := 0;  --  Counters for the different stages.
+variable cnt2   : natural range 0 TO 7  := 0;  --  One for each solved a syncronisation
+variable cnt3   : natural range 0 TO 7  := 0;  --  problem when using only one.
 begin
 
     if reset = '0' then

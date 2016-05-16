@@ -3,6 +3,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 use ieee.numeric_std.ALL;
 use work.aids.ALL;
 
+--  The ocsillator combines the sine wave, geometric waves (i.e square, tri, saw), and noise into
+--  one component and connects the control signals to all of them and multiplexes the output.
+
 entity oscillator is
     port( clk       : in STD_LOGIC;
           reset     : in STD_LOGIC;
@@ -64,10 +67,6 @@ architecture arch_oscillator of oscillator is
     signal out_noise : STD_LOGIC_VECTOR (15 downto 0);
     signal out_noise2 : STD_LOGIC_VECTOR (15 downto 0);
     
-
-    
-
-
 begin
 
 sineWave_comp: sineWave

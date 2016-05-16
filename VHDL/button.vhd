@@ -1,6 +1,9 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+--  This component delays a push of a button and at the same times
+--  works as a debouncer.
+
 entity button is
     port(
         clk     : in STD_LOGIC;

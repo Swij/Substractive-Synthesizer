@@ -15,7 +15,10 @@ architecture arch_prescaler of prescaler is
 signal clkReg : std_logic := '0';
 
 begin
-    
+
+--  Not really a pre scaler but a bit-enable.
+--  When the counter has reached a certain value it outputs the preClk as high.
+
 prescale_process:
 process(clk)
 variable cnt : natural range 0 to (prescale-1);
