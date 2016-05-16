@@ -324,7 +324,7 @@ architecture arch_top of top is
 
     --  I2S component
     component I2S_transmitter is
-    generic( WIDTH:INTEGER:=12 );
+    generic( WIDTH:INTEGER := 12 );
     port( clk  : in std_logic;
           data : in std_logic_vector(WIDTH-1 downto 0);
           sck  : out std_logic;
@@ -337,7 +337,20 @@ architecture arch_top of top is
     signal I2S_ws : std_logic;
     signal I2S_sd : std_logic;
     
-    	
+    --  ADC component
+    component MCP3202_ADC is
+    generic( WIDTH : natural := 12);
+    port( clk : in std_logic;
+          cs  : out std_logic;
+          sck : out std_logic;
+          si  : in std_logic;
+          so  : out std_logic;
+          conversion     : out std_logic_vector(WIDTH-1 downto 0);
+          settings       : in std_logic_vector(3 downto 0);
+          get_conversion : in std_logic;
+          rdy_conversion : out std_logic );
+    end component;
+    
     --  LCD component
 --    component LCD is
 --    port( clk    : in  std_logic;
