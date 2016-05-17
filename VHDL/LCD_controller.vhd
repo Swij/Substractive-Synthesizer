@@ -28,6 +28,8 @@ entity LCD_controller is
 end LCD_controller;
 
 architecture Behavioral of LCD_controller is
+  CONSTANT cmd_delay : INTEGER := integer(real(input_clk)*0.000043);
+  CONSTANT clear_delay : INTEGER := integer(real(input_clk)*0.00153);
   type mem_init is array(0 to 5) of std_logic_vector(7 downto 0);
   type states is (idle, initiate, send, busy_up, busy_down, delayer );
 
@@ -55,19 +57,15 @@ architecture Behavioral of LCD_controller is
   signal i2c_enable : std_logic;
   signal i2c_data_wr : std_logic_vector(7 downto 0);
   signal i2c_busy : std_logic;
-  signal i2c_rw : std_logic;
   signal i2c_data_rd : std_logic_vector(7 downto 0);
   signal i2c_ack_error : std_logic;
 
   signal temp_cmd : std_logic_vector(7 downto 0);
   signal temp_RS : std_logic;
 begin
-  -- Always write
-  i2c_rw <= '0';
-
   I2C_inst: i2c_master
     generic map (input_clk, i2c_bus_clk)
-    port map (clk, reset, i2c_enable, i2c_addr, i2c_rw, i2c_data_wr, i2c_busy, i2c_data_rd, i2c_ack_error, i2c_sda, i2c_scl);
+    port map (clk, reset, i2c_enable, i2c_addr, '0', i2c_data_wr, i2c_busy, i2c_data_rd, i2c_ack_error, i2c_sda, i2c_scl);
 
   test:process(clk)
     variable init_cnt : integer range 0 to init_instr'LENGTH := 0;
@@ -149,9 +147,9 @@ begin
             end if;
           when delayer => -- Wait for 2ms to allow LCD to complete the command
             if initializing = '1' OR temp_cmd = X"01" then
-              max_delay := 100_000; -- 2ms
+              max_delay := clear_delay; -- 2ms
             else
-              max_delay := 2500; -- 50us
+              max_delay := cmd_delay; -- 50us
             end if;
             if delay < max_delay then -- 2ms delay @ 50MHz
               state <= delayer;

@@ -5,8 +5,7 @@ use work.ascii.ALL;
 
 entity LCD_main is
   Generic ( input_clk : integer := 50_000_000;
-            i2c_bus_clk : integer := 100_000;
-            cmd_delay   : integer := 100_000); -- Delay to wait between commands
+            i2c_bus_clk : integer := 100_000); -- Delay to wait between commands
   Port (  clk : in  std_logic;
           reset : in  std_logic;
           lcd_bl : in std_logic;
@@ -28,8 +27,7 @@ architecture Behavioral of LCD_main is
   -- LCD controller component
   component LCD_controller is
     Generic ( input_clk   : integer;
-              i2c_bus_clk : integer;
-              cmd_delay   : integer); -- Delay to wait between commands
+              i2c_bus_clk : integer); -- Delay to wait between commands
     Port (  clk       : in  std_logic;
             reset     : in  std_logic;
             init      : in std_logic; -- Init LCD
@@ -50,10 +48,8 @@ architecture Behavioral of LCD_main is
   signal lcd_command : std_logic_vector(7 downto 0);
 
 begin
-  --value_BCD_row <= to_BCD_row(value);
-
   LCD_controller_inst: LCD_controller
-    generic map (input_clk, i2c_bus_clk, cmd_delay)
+    generic map (input_clk, i2c_bus_clk)
     port map (clk, reset, lcd_init, lcd_bl, lcd_RS, lcd_enable, lcd_command, lcd_addr, lcd_ready, i2c_sda, i2c_scl);
 
   main_loop:process(clk)
@@ -62,7 +58,7 @@ begin
     variable updating, row : std_logic := '0';
     variable prev_value : std_logic_vector(15 downto 0) := (others => '0');
     variable prev_value_type, value_type_t : integer range 0 to 15 := 0;
-    variable value_BCD_row : mem_row := (others => (others => '0'));
+    variable value_BCD_row : BCD_row := (others => (others => '0'));
   begin
     if rising_edge(clk) then
       if reset = '0' then
@@ -107,7 +103,7 @@ begin
               lcd_RS <= '0';
               row := '1';
               count := 0;
-            elsif count = (mem_row'LENGTH-1) AND row = '1' then
+            elsif count = (BCD_row'LENGTH-1) AND row = '1' then
               lcd_RS <= '1';
               updating := '0';
               row := '0';
