@@ -33,9 +33,7 @@ BEGIN
 			
 		ELSIF (Data_ready='1') THEN
 			
-			Velo_int <= TO_INTEGER(SIGNED(Data_in(7 DOWNTO 0)));
-			
-			IF Velo_int = 0 OR Note_on = '0' THEN
+			IF Note_on = '0' THEN
 				Note <= (OTHERS => '0');
 				Note_state_reg <= '0';
 				

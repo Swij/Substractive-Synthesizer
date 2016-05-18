@@ -75,16 +75,16 @@ BEGIN
 					
 				WHEN Others =>
 					
---					IF(Data_in = Prev_note_reg) THEN
---						Byte_cnt <= 1;
---						Note_state <= NOT(Note_state);
---						MIDI_Decoder_state <= Recieve;
---						Data_acc(15 DOWNTO 8) <= Prev_note_reg;
+					IF(Data_in = Prev_note_reg) THEN
+						Byte_cnt <= 1;
+						Note_state <= NOT(Note_state);
+						MIDI_Decoder_state <= Recieve;
+						Data_acc(15 DOWNTO 8) <= Prev_note_reg;
 
---					ELSE
+					ELSE
 	
 						MIDI_Decoder_state <= Idle;
-					--END IF;
+					END IF;
 
 				END CASE;
 			
@@ -95,12 +95,15 @@ BEGIN
 			IF (Data_ready = '1') THEN					
 				
 				IF (Byte_cnt = 2) THEN
-				
 					Data_acc(15 DOWNTO 8) <= Data_in;
 					Byte_cnt <= 1;
 					Prev_note_reg <= Data_in;
 				
 				ELSIF (Byte_cnt = 1) THEN
+					
+					IF (Data_in = "00000000") THEN
+					   Note_state <= '0';
+					END IF;
 					
 					Data_acc(7 DOWNTO 0) <= Data_in;
 					Byte_cnt <= 0;

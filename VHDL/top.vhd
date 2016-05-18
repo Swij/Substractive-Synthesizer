@@ -36,7 +36,7 @@ entity top is
 --        ROTARY_PUSH : in std_logic;
         
         --  DIP ON PCB
---        GPIO_DIP_SW0 : in std_logic;
+        GPIO_DIP_SW0 : in std_logic;
 --        GPIO_DIP_SW1 : in std_logic;
 --        GPIO_DIP_SW2 : in std_logic;
 --        GPIO_DIP_SW3 : in std_logic;
@@ -325,9 +325,12 @@ architecture arch_top of top is
     signal Uart_Dec     : std_logic_vector(7 downto 0);
     signal Note_data    : std_logic_vector(15 downto 0);
     signal Note_ready   : std_logic;
-        signal Note_state   : std_logic;
-        signal uartLED   : std_logic;
+    signal Note_state   : std_logic;
+    TYPE States IS (Idle, Recieved);
+	SIGNAL MIDI_note_state 	: States;
+	signal uartLED   : std_logic;
     signal Note_out     : std_logic_vector(7 downto 0);
+	signal Note_rec     : std_logic_vector(7 downto 0);
 
     --  I2S component
     component I2S_transmitter is
@@ -577,10 +580,7 @@ ADC_comp: component MCP3202_ADC
     ASR_atk_time <= std_logic_vector(to_signed(ASR_atk_timeReg,16));
     ASR_rls_time <= std_logic_vector(to_signed(ASR_rls_timeReg,16));
     
-    gpioLEDS(0) <= ASR_noteState;
-    PMOD_1 <= PMOD_0;
     
-    PMOD_2 <= uartLED;
     --  I2S
     FMC1_HPC_LA02_P <= I2S_sd;
     I2S_data <= "111111000000";
@@ -621,24 +621,29 @@ ADC_comp: component MCP3202_ADC
 ---- Constant signals
 --------------------------------------------------------------------------------
 
---btn_process:
---process(clk)
---begin
-
---    if rising_edge(clk) then
-
-----        if btn0_out = '1'
-----        then gpioLEDS(2) <= not(gpioLEDS(2));
-----        end if;
-----        gpioLEDS(2) <= btn0_out;
-
---        if encoders(0)(2) = '1'
---        then gpioLEDS(3) <= not(gpioLEDS(3));
---        end if;
-        
---    end if;
-    
---end process;
+MIDI_Process:
+process(clk)
+begin
+	if rising_edge(clk) then
+		case MIDI_note_state is
+		when Idle =>
+			if ASR_Note_State = '1' then
+				Note_rec <= Note_out;
+				MIDI_note_state <= Recieved;
+			end if;
+		when Recieved =>
+			if ASR_Note_State = '0' then
+				MIDI_note_state <= Idle;
+			end if;	
+		end case;
+		if GPIO_DIP_SW0 = '1' then 
+			gpioLEDS <= Note_rec(7 downto 4);
+		else 
+			gpioLEDS <= Note_rec(3 downto 0);
+		end if;
+	end if;
+end process;
+		
 ADC_process:
 process(clk)
 begin
