@@ -8,7 +8,7 @@ use IEEE.NUMERIC_STD.all;
 -- then send them on to the MIDI Decoder
 
 -- Incoming clockrate should be equal to
--- MIDI transfer rate, aka 31.250 kHz
+-- 10xMIDI transfer rate, aka 312.500 kHz
 
 ---------------------------------------------
 
@@ -17,8 +17,7 @@ ENTITY Uart IS
 		Data_in		: in STD_LOGIC;
 		Reset		: in STD_LOGIC;
 		Clock		: in STD_LOGIC;
-        Data_send    : out STD_LOGIC;
-        LED    : out STD_LOGIC;
+        Data_send   : out STD_LOGIC;
 		Data_out	: out STD_LOGIC_VECTOR(7 DOWNTO 0)
 	);
 END Uart;
@@ -33,10 +32,7 @@ ARCHITECTURE Uart_Arch OF Uart IS
 	SIGNAL Bit_counter : INTEGER RANGE 0 to 8;
 	SIGNAL Scalar : INTEGER RANGE 0 to 11 := 0;
 	SIGNAL Sample : INTEGER RANGE 0 to 11 := 0;
-	signal uart_led : std_logic;
 BEGIN
-    
-    LED <= uart_led;
 
 PROCESS(Clock, Reset)
 
@@ -49,26 +45,25 @@ PROCESS(Clock, Reset)
 		Bit_counter <= 0;
 		Data_send <= '0';
 		Scalar <= 0;
-		uart_led <= '0';
 	
-	ELSIF rising_edge(Clock) THEN					-- Triggering once every sent bit
+	ELSIF rising_edge(Clock) THEN					-- Triggering on 10x midi transfer rate
 			
 		CASE Uart_state IS
 			
 		WHEN Idle =>								-- Wait for low input to indicate the start of a Byte
 			
-			Data_send <= '0';
+			Data_send <= '0';						-- Clear earlier data
 			Bit_counter <= 0;
 			Scalar <= 0;
 			Data_acc <= (Others => '0');
 
 			
-			IF (Data_in = '0') THEN
+			IF (Data_in = '0') THEN					-- Low input indicates incoming byte
 				
 				Uart_state <= Synch;
 				
 			END IF;
-		WHEN Synch =>
+		WHEN Synch =>								-- When first bit is received, step to the middle of the pulse to ensure a correct reading
 			Scalar <= Scalar + 1;
 			IF (Scalar = 4) THEN 
 				Scalar <= 0;
@@ -77,7 +72,7 @@ PROCESS(Clock, Reset)
 			
 		WHEN Recieve =>								-- Accumulate 8 consecutive bits into one Byte
 			Data_out <= (Others => '0');
-			Scalar <= Scalar + 1;
+			Scalar <= Scalar + 1;					-- 10 clock cycles per midi bit
 			IF (Scalar = 9) THEN
 				
 				Data_acc(Bit_counter) <= Data_in;
@@ -97,14 +92,13 @@ PROCESS(Clock, Reset)
 			Data_out <= Data_acc;
 			Uart_state <= Sleep;
 			
-		WHEN Sleep =>
+		WHEN Sleep =>								-- One stop bit after every byte, wait for it here
 			
 			Scalar <= Scalar + 1;
 			IF (Scalar = 9) THEN
 				Scalar <= 0;
 				Uart_state <= Idle;
-				Data_send <= '1';
-			    uart_led <= not(uart_led);				
+				Data_send <= '1';			
 			END IF;
 			
 		END CASE;

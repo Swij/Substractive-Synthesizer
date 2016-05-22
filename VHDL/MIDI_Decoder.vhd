@@ -5,7 +5,7 @@ use IEEE.NUMERIC_STD.all;
 -----------------------------------
 
 -- Component decoding the bytes recieved from the Uart connected to the MIDI
--- Should operate on 31.250 kHz clock freq
+-- Should operate on 312.500 kHz clock freq
 
 -----------------------------------
 
@@ -25,16 +25,16 @@ END MIDI_Decoder;
 ARCHITECTURE MIDI_Decoder_arch OF MIDI_Decoder IS
 
 	TYPE States IS (Idle, Recieve, Send);
-	SIGNAL Data_acc 			: STD_LOGIC_VECTOR(15 DOWNTO 0);	
+	SIGNAL Data_acc 			: STD_LOGIC_VECTOR(15 DOWNTO 0);	-- Accumulates incoming data bytes
 	SIGNAL Note_state			: STD_LOGIC;						-- 1 if note on, 0 if note off
-	SIGNAL MIDI_Decoder_State 	: States;
-	SIGNAL Byte_cnt				: INTEGER Range 0 to 2;
-	SIGNAL Prev_note_reg		: STD_LOGIC_VECTOR(7 DOWNTO 0);
+	SIGNAL MIDI_Decoder_State 	: States;							-- Different states of the encoder
+	SIGNAL Byte_cnt				: INTEGER Range 0 to 2;				-- Number of data byte for the corresponding status byte
+	SIGNAL Prev_note_reg		: STD_LOGIC_VECTOR(7 DOWNTO 0);		-- Register for the previous note recieved
 BEGIN
 	
 PROCESS(Clock,Reset)
 BEGIN
-	IF(Reset = '0') THEN
+	IF(Reset = '0') THEN											-- Asynchronous reset
 		
 		Data_acc <= (OTHERS => '0');
 		Data_out <= (OTHERS => '0');
@@ -48,9 +48,9 @@ BEGIN
 	
 		CASE MIDI_Decoder_State IS
 	
-		WHEN Idle =>
+		WHEN Idle =>												-- Waiting for incoming data
 			
-			Data_acc <= (OTHERS => '0');
+			Data_acc <= (OTHERS => '0');							-- Clear accumulated data
 			Data_out <= (OTHERS => '0');
 			Byte_cnt <= 0;
 			Data_send <= '0';
@@ -59,13 +59,13 @@ BEGIN
 			
 				CASE Data_in(7 DOWNTO 4) IS						--Determines MIDI message type, more can be added
 			
-				WHEN "1000" =>
+				WHEN "1000" =>									-- Note off message
 					
 					Byte_cnt <= 2;
 					MIDI_Decoder_State <= Recieve;
 					Note_state <= '0';
 	
-				WHEN "1001" =>
+				WHEN "1001" =>									-- Note on message
  	
 					Byte_cnt <= 2;
 					Note_state <= '1';
@@ -75,15 +75,15 @@ BEGIN
 					
 				WHEN Others =>
 					
-					IF(Data_in = Prev_note_reg) THEN
-						Byte_cnt <= 1;
+					IF(Data_in = Prev_note_reg) THEN			-- When the same key is pressed repeatedly, no new status byte is generated.
+						Byte_cnt <= 1;							-- This part checks for the same note number incoming without status byte, if yes then invert note status
 						Note_state <= NOT(Note_state);
 						MIDI_Decoder_state <= Recieve;
 						Data_acc(15 DOWNTO 8) <= Prev_note_reg;
 
 					ELSE
 	
-						MIDI_Decoder_state <= Idle;
+						MIDI_Decoder_state <= Idle;				-- If none of the above, revert to idle state
 					END IF;
 
 				END CASE;
@@ -94,21 +94,21 @@ BEGIN
 			
 			IF (Data_ready = '1') THEN					
 				
-				IF (Byte_cnt = 2) THEN
+				IF (Byte_cnt = 2) THEN							-- Accumulates incoming data byte nr 1, usually note number
 					Data_acc(15 DOWNTO 8) <= Data_in;
 					Byte_cnt <= 1;
 					Prev_note_reg <= Data_in;
 				
-				ELSIF (Byte_cnt = 1) THEN
+				ELSIF (Byte_cnt = 1) THEN						-- Accumulates data byte nr 2, usually note velocity
 					
-					IF (Data_in = "00000000") THEN
+					IF (Data_in = "00000000") THEN				-- Velocity = 0 => note off
 					   Note_state <= '0';
 					END IF;
 					
 					Data_acc(7 DOWNTO 0) <= Data_in;
 					Byte_cnt <= 0;
 						
-					MIDI_Decoder_state <= Send;
+					MIDI_Decoder_state <= Send;					-- Got to the send state	
 					
 				END IF;
 			END IF;
@@ -118,7 +118,7 @@ BEGIN
 			Data_out <= Data_acc;
 			Note_state_out <= Note_state;
 			Data_send <= '1';
-			MIDI_Decoder_State <= Idle;
+			MIDI_Decoder_State <= Idle;							-- Revert to Idle state when data has been sent
 			
 		END CASE;
 	END IF;
