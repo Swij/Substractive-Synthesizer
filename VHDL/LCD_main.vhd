@@ -4,8 +4,8 @@ use IEEE.NUMERIC_STD.ALL;
 use work.ascii.ALL;
 
 entity LCD_main is
-  Generic ( input_clk : integer := 50_000_000;
-            i2c_bus_clk : integer := 100_000); -- Delay to wait between commands
+  Generic ( input_clk : integer;
+            i2c_bus_clk : integer); -- Delay to wait between commands
   Port (  clk : in  std_logic;
           reset : in  std_logic;
           lcd_bl : in std_logic;

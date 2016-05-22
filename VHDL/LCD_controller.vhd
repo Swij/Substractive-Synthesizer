@@ -12,8 +12,8 @@ use IEEE.NUMERIC_STD.ALL;
 --P7 = D7
 
 entity LCD_controller is
-  Generic ( input_clk   : integer := 50_000_000;
-            i2c_bus_clk : integer := 100_000); -- Delay to wait between commands
+  Generic ( input_clk   : integer;
+            i2c_bus_clk : integer); -- Delay to wait between commands
   Port (  clk       : in  std_logic;
           reset     : in  std_logic;
           init      : in std_logic; -- Init LCD
@@ -122,13 +122,13 @@ begin
               state <= busy_up;
               case send_cnt is
                 when 0 => -- Send bits 7-4 first with EN=1
-                  i2c_data_wr <= ((temp_cmd AND X"F0") OR (bl & "10" & temp_RS));
+                  i2c_data_wr <= ((temp_cmd AND X"F0") OR ("0000" & bl & "10" & temp_RS));
                 when 1 => -- Send same command but with EN=0
-                  i2c_data_wr <= ((temp_cmd AND X"F0") OR (bl & "00" & temp_RS));
+                  i2c_data_wr <= ((temp_cmd AND X"F0") OR ("0000" & bl & "00" & temp_RS));
                 when 2 => -- Send bits 3-0 with with EN=1
-                  i2c_data_wr <= ((temp_cmd(3 downto 0) & "0000") OR (bl & "10" & temp_RS));
+                  i2c_data_wr <= ((temp_cmd(3 downto 0) & "0000") OR ("0000" & bl & "10" & temp_RS));
                 when others => -- Send same command but with EN=0
-                  i2c_data_wr <= ((temp_cmd(3 downto 0) & "0000") OR (bl & "00" & temp_RS));
+                  i2c_data_wr <= ((temp_cmd(3 downto 0) & "0000") OR ("0000" & bl & "00" & temp_RS));
               end case;
               send_cnt := send_cnt+1;
             end if;

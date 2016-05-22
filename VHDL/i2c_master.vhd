@@ -26,7 +26,7 @@
 --     Adjusted timing of SCL during start and stop conditions
 --   Version 2.2 02/05/2015 Scott Larson
 --     Corrected small SDA glitch introduced in version 2.1
--- 
+--
 --------------------------------------------------------------------------------
 
 LIBRARY ieee;
@@ -35,8 +35,8 @@ USE ieee.std_logic_unsigned.all;
 
 ENTITY i2c_master IS
   GENERIC(
-    input_clk : INTEGER := 50_000_000; --input clock speed from user logic in Hz
-    bus_clk   : INTEGER := 400_000);   --speed the i2c bus (scl) will run at in Hz
+    input_clk : INTEGER; --input clock speed from user logic in Hz
+    bus_clk   : INTEGER);   --speed the i2c bus (scl) will run at in Hz
   PORT(
     clk       : IN     STD_LOGIC;                    --system clock
     reset_n   : IN     STD_LOGIC;                    --active low reset
@@ -200,17 +200,17 @@ BEGIN
                 state <= rd;                 --go to read byte
               ELSE                           --continue transaction with a write or new slave
                 state <= start;              --repeated start
-              END IF;    
+              END IF;
             ELSE                             --complete transaction
               state <= stop;                 --go to stop bit
             END IF;
           WHEN stop =>                       --stop bit of transaction
             busy <= '0';                     --unflag busy
             state <= ready;                  --go to idle state
-        END CASE;    
+        END CASE;
       ELSIF(data_clk = '0' AND data_clk_prev = '1') THEN  --data clock falling edge
         CASE state IS
-          WHEN start =>                  
+          WHEN start =>
             IF(scl_ena = '0') THEN                  --starting new transaction
               scl_ena <= '1';                       --enable scl output
               ack_error <= '0';                     --reset acknowledge error output
@@ -232,16 +232,16 @@ BEGIN
         END CASE;
       END IF;
     END IF;
-  END PROCESS;  
+  END PROCESS;
 
   --set sda output
   WITH state SELECT
     sda_ena_n <= data_clk_prev WHEN start,     --generate start condition
                  NOT data_clk_prev WHEN stop,  --generate stop condition
-                 sda_int WHEN OTHERS;          --set to internal sda signal    
-      
+                 sda_int WHEN OTHERS;          --set to internal sda signal
+
   --set scl and sda outputs
   scl <= '0' WHEN (scl_ena = '1' AND scl_clk = '0') ELSE 'Z';
   sda <= '0' WHEN sda_ena_n = '0' ELSE 'Z';
-  
+
 END logic;
