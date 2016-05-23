@@ -31,7 +31,7 @@ begin
 
 --  This process change the encoder states and checks the button.
 state_process: 
-process(clk)
+process(clk, reset)
 begin
 
     bt <= btn;  --  The button output is always the internal register for it.

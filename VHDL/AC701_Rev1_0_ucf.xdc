@@ -154,21 +154,21 @@ set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_HA10_P]
 
 ## ADC
 # CS
-#set_property PACKAGE_PIN M16 [get_ports FMC1_HPC_LA20_P]
-#set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA20_P]
+set_property PACKAGE_PIN M16 [get_ports FMC1_HPC_LA20_P]
+set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA20_P]
 # CLK
-#set_property PACKAGE_PIN M17 [get_ports FMC1_HPC_LA20_N]
-#set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA20_N]
+set_property PACKAGE_PIN M17 [get_ports FMC1_HPC_LA20_N]
+set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA20_N]
 # OUT
-#set_property PACKAGE_PIN J19 [get_ports FMC1_HPC_LA21_P]
-#set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA21_P]
+set_property PACKAGE_PIN J19 [get_ports FMC1_HPC_LA21_P]
+set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA21_P]
 # IN
-#set_property PACKAGE_PIN H19 [get_ports FMC1_HPC_LA21_N]
-#set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA21_N]
+set_property PACKAGE_PIN H19 [get_ports FMC1_HPC_LA21_N]
+set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA21_N]
 
 # MIDI
-#set_property PACKAGE_PIN L17 [get_ports FMC1_HPC_LA22_P]
-#set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA22_P]
+set_property PACKAGE_PIN L17 [get_ports FMC1_HPC_LA22_P]
+set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA22_P]
 
 # System clock
 set_property PACKAGE_PIN R3 [get_ports SYSCLK_P]
@@ -223,6 +223,16 @@ set_property PULLUP true [get_ports PMOD_2]
 set_property PACKAGE_PIN T23 [get_ports PMOD_3]
 set_property IOSTANDARD LVCMOS33 [get_ports PMOD_3]
 set_property PULLUP true [get_ports PMOD_3]
+
+## XADC
+set_property PACKAGE_PIN H17 [get_ports XADC_GPIO_0]
+set_property IOSTANDARD LVCMOS33 [get_ports XADC_GPIO_0]
+set_property PACKAGE_PIN E22 [get_ports XADC_GPIO_1]
+set_property IOSTANDARD LVCMOS33 [get_ports XADC_GPIO_1]
+set_property PACKAGE_PIN K18 [get_ports XADC_GPIO_2]
+set_property IOSTANDARD LVCMOS33 [get_ports XADC_GPIO_2]
+set_property PACKAGE_PIN L19 [get_ports XADC_GPIO_3]
+set_property IOSTANDARD LVCMOS33 [get_ports XADC_GPIO_3]
 
 
 ### UNUSED PORTS ###
@@ -450,8 +460,6 @@ set_property PULLUP true [get_ports PMOD_3]
 #set_property IOSTANDARD LVCMOS33 [get_ports SFP_LOS]
 #set_property PACKAGE_PIN R18 [get_ports SFP_TX_DISABLE]
 #set_property IOSTANDARD LVCMOS33 [get_ports SFP_TX_DISABLE]
-#set_property PACKAGE_PIN K18 [get_ports XADC_GPIO_2]
-#set_property IOSTANDARD LVCMOS25 [get_ports XADC_GPIO_2]
 #set_property PACKAGE_PIN K15 [get_ports XADC_VAUX0_R_P]
 #set_property IOSTANDARD LVCMOS25 [get_ports XADC_VAUX0_R_P]
 #set_property PACKAGE_PIN J16 [get_ports XADC_VAUX0_R_N]
@@ -541,13 +549,7 @@ set_property PULLUP true [get_ports PMOD_3]
 #set_property PACKAGE_PIN J26 [get_ports SM_FAN_PWM]
 #set_property IOSTANDARD LVCMOS25 [get_ports SM_FAN_PWM]
 
-
-#set_property PACKAGE_PIN L19 [get_ports XADC_GPIO_3]
-#set_property IOSTANDARD LVCMOS25 [get_ports XADC_GPIO_3]
-
 ## BANK 16
-#set_property PACKAGE_PIN H17 [get_ports XADC_GPIO_0]
-#set_property IOSTANDARD LVCMOS33 [get_ports XADC_GPIO_0]
 #set_property PACKAGE_PIN H14 [get_ports FMC1_HPC_LA02_P]
 #set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA02_P]
 #set_property PACKAGE_PIN G19 [get_ports FMC1_HPC_LA06_P]
@@ -564,10 +566,10 @@ set_property PULLUP true [get_ports PMOD_3]
 #set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA11_N]
 #set_property PACKAGE_PIN E20 [get_ports FMC1_HPC_LA12_P]
 #set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA12_P]
-set_property PACKAGE_PIN A20 [get_ports FMC1_HPC_LA13_N]
-set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA13_N]
-set_property PACKAGE_PIN C21 [get_ports FMC1_HPC_LA14_P]
-set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA14_P]
+#set_property PACKAGE_PIN A20 [get_ports FMC1_HPC_LA13_N]
+#set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA13_N]
+#set_property PACKAGE_PIN C21 [get_ports FMC1_HPC_LA14_P]
+#set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA14_P]
 #set_property PACKAGE_PIN E17 [get_ports FMC1_HPC_LA01_CC_P]
 #set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA01_CC_P]
 #set_property PACKAGE_PIN E18 [get_ports FMC1_HPC_LA01_CC_N]
@@ -604,8 +606,6 @@ set_property IOSTANDARD LVCMOS33 [get_ports FMC1_HPC_LA14_P]
 #set_property IOSTANDARD LVDS_25 [get_ports REC_CLOCK_C_P]
 #set_property PACKAGE_PIN D24 [get_ports REC_CLOCK_C_N]
 #set_property IOSTANDARD LVDS_25 [get_ports REC_CLOCK_C_N]
-#set_property PACKAGE_PIN E22 [get_ports XADC_GPIO_1]
-#set_property IOSTANDARD LVCMOS33 [get_ports XADC_GPIO_1]
 
 
 #set_property PACKAGE_PIN V4 [get_ports No]

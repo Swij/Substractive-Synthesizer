@@ -5,16 +5,16 @@ use IEEE.NUMERIC_STD.ALL;
 package aids is
     -- Filter type enumerator
     type FILTER is (LP, HP, BP);
-    
+
     -- Enumerator for oscillator-wave types
     type WAVE is (SINE, COSINE, SQUARE, TRIANGLE, SAW1, SAW2, NOISE, NOISE2);
-    
+
     -- STD_LOGIC_VECTOR to WAVE
     function to_wave (input : std_logic_vector(2 downto 0)) return WAVE;
-    
+
     -- Table of angles 0 to 359 represented as 2^32*(i/360)
     type regAng is array (0 to 359) of std_logic_vector(31 downto 0);
-    signal angles : regAng := (
+    constant angles : regAng := (
         "00000000000000000000000000000000",
         "00000000101101100000101101100001",
         "00000001011011000001011011000001",
@@ -385,21 +385,21 @@ package body aids is
             when "000" =>
                 output := SINE;
             when "001" =>
-                output := COSINE;
-            when "010" =>
                 output := SQUARE;
-            when "011" =>
+            when "010" =>
                 output := TRIANGLE;
-            when "100" =>
+            when "011" =>
                 output := SAW1;
-            when "101" =>
+            when "100" =>
                 output := SAW2;
+            when "101" =>
+                output := COSINE;
             when "110" =>
                 output := NOISE;
             when others =>
                 output := NOISE2;
         end case;
-        
+
         return output;
     end to_wave;
 end aids;

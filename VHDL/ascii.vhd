@@ -15,8 +15,8 @@ package ascii is
     type mem_types is array(0 to 15) of mem_row;
     constant linebreak_to_BCD : std_logic_vector(7 downto 0) := std_logic_vector(to_unsigned(192+(16-BCD_row'LENGTH), 8)); -- 192 = 0xC0 which is new row
     constant types : mem_types := (
-      (X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",linebreak_to_BCD), -- LFO dutycycle:
-      (X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",linebreak_to_BCD), -- LFO offset:
+      (X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",linebreak_to_BCD), --
+      (X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",X"20",linebreak_to_BCD), -- 
       (X"4f",X"53",X"43",X"31",X"20",X"64",X"75",X"74",X"79",X"63",X"79",X"63",X"6c",X"65",X"3a",linebreak_to_BCD), -- OSC1 dutycycle:
       (X"4f",X"53",X"43",X"32",X"20",X"64",X"75",X"74",X"79",X"63",X"79",X"63",X"6c",X"65",X"3a",linebreak_to_BCD), -- OSC2 dutycycle:
       (X"4f",X"53",X"43",X"32",X"20",X"6f",X"66",X"66",X"73",X"65",X"74",X"3a",X"20",X"20",X"20",linebreak_to_BCD), -- OSC2 offset:

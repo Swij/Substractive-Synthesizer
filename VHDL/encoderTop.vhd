@@ -43,7 +43,7 @@ begin
 encoder_comp:
 component encoder
     port map(
-        clk, '1', Ax, Bx, C, change, dir, btn
+        clk, reset, Ax, Bx, C, change, dir, btn
     );
     
 debounce_compA:

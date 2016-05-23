@@ -69,7 +69,7 @@ begin
 
   test:process(clk)
     variable init_cnt : integer range 0 to init_instr'LENGTH := 0;
-    variable delay, max_delay : integer range 0 to 100_000 := 0;
+    variable delay, max_delay : integer range 0 to 400_000 := 0;
     variable send_cnt : integer range 0 to 4 := 0;
     variable initializing : std_logic := '0';
   begin

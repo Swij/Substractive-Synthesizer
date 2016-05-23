@@ -1,104 +1,124 @@
-use work.ascii.ALL;
+-- Dependencies
 library IEEE;
     use IEEE.STD_LOGIC_1164.ALL;
     use IEEE.NUMERIC_STD.ALL;
 library UNISIM;
     use UNISIM.VComponents.ALL;
+library IEEE_proposed;
+    use IEEE_proposed.fixed_float_types.all;
+    use IEEE_proposed.fixed_pkg.all;
+
+-- Own libraries
+use work.ascii.ALL;
+use work.aids.ALL;
 
 entity synth_top is
-  Port (  --  SYSTEM CLOCK
-          SYSCLK_P  : in std_logic;
-          SYSCLK_N  : in std_logic;
+  Port (
+    --  SYSTEM CLOCK
+    SYSCLK_P  : in std_logic;
+    SYSCLK_N  : in std_logic;
 
-          -- LCD
-          FMC1_HPC_LA13_N : inout std_logic; -- SDA
-          FMC1_HPC_LA14_P : inout std_logic; -- SCL
+    -- VCC
+    FMC1_HPC_HA10_P : out std_logic := '1';
 
-          -- VCC
-          FMC1_HPC_HA10_P : out std_logic := '1';
+    -- GPIO switches
+    GPIO_SW_N : in std_logic; -- reset
 
-          -- GPIO switches
-          GPIO_SW_N : in std_logic;
+    -- MIDI in
+    FMC1_HPC_LA22_P : in std_logic;
 
-          -- PMOD
-          PMOD_2 : inout std_logic; -- SDA
-          PMOD_3 : inout std_logic; -- SCL
+    -- PMOD
+    PMOD_2 : inout std_logic; -- LCD-SDA
+    PMOD_3 : inout std_logic; -- LCD-SCL
 
-          ---- Encoders
-          -- LFO1 dutycycle
-          FMC1_HPC_HA08_N : in std_logic; -- Button
-          FMC1_HPC_HA09_P : in std_logic; -- A
-          FMC1_HPC_HA09_N : in std_logic; -- B
-          -- LFO2 Offset
-          FMC1_HPC_HA18_N : in std_logic; -- Button
-          FMC1_HPC_HA19_P : in std_logic; -- A
-          FMC1_HPC_HA19_N : in std_logic; -- B
-          -- Oscillator 1  wavetype
-          FMC1_HPC_LA08_N : in std_logic; -- Button
-          FMC1_HPC_LA09_P : in std_logic; -- A
-          FMC1_HPC_LA09_N : in std_logic; -- B
-          -- Oscillator 1 dutycycle
-          FMC1_HPC_HA11_P : in std_logic; -- Button
-          FMC1_HPC_HA11_N : in std_logic; -- A
-          FMC1_HPC_HA12_P : in std_logic; -- B
-          -- Oscillator 2 wavetype
-          FMC1_HPC_HA04_P : in std_logic; -- Button
-          FMC1_HPC_HA04_N : in std_logic; -- A
-          FMC1_HPC_HA05_P : in std_logic; -- B
-          -- Oscillator 2 dutycycle
-          FMC1_HPC_HA14_P : in std_logic; -- Button
-          FMC1_HPC_HA14_N : in std_logic; -- A
-          FMC1_HPC_HA15_P : in std_logic; -- B
-          -- Filter type/resonance
-          FMC1_HPC_HA05_N : in std_logic; -- Button
-          FMC1_HPC_HA06_P : in std_logic; -- A
-          FMC1_HPC_HA06_N : in std_logic; -- B
-          -- Filter cutoff
-          FMC1_HPC_HA15_N : in std_logic; -- Button
-          FMC1_HPC_HA16_P : in std_logic; -- A
-          FMC1_HPC_HA16_N : in std_logic; -- B
-          -- Echo length
-          FMC1_HPC_HA07_P : in std_logic; -- Button
-          FMC1_HPC_HA07_N : in std_logic; -- A
-          FMC1_HPC_HA08_P : in std_logic; -- B
-          -- Envelope attack
-          FMC1_HPC_HA12_N : in std_logic; -- Button
-          FMC1_HPC_HA13_P : in std_logic; -- A
-          FMC1_HPC_HA13_N : in std_logic; -- B
-          -- Envelope release
-          FMC1_HPC_HA02_N : in std_logic; -- Button
-          FMC1_HPC_HA03_P : in std_logic; -- A
-          FMC1_HPC_HA03_N : in std_logic; -- B
+    -- XADC
+    XADC_GPIO_0 : out std_logic;  --  LDAC
+    XADC_GPIO_1 : out std_logic;  --  SCLK
+    XADC_GPIO_2 : out std_logic;  --  DIN
+    XADC_GPIO_3 : out std_logic;  --  SYNC
 
-          -- LEDs
-          FMC1_HPC_LA02_N : out std_logic; -- Oscillator 1 Saw 2
-          FMC1_HPC_LA03_P : out std_logic; -- Oscillator 1 Saw 1
-          FMC1_HPC_LA03_N : out std_logic; -- Oscillator 1 Triangle
-          FMC1_HPC_LA04_P : out std_logic; -- Oscillator 1 Square
-          FMC1_HPC_LA04_N : out std_logic; -- Oscillator 1 Sine
-          FMC1_HPC_LA05_P : out std_logic; -- Oscillator 2 Saw 2
-          FMC1_HPC_LA05_N : out std_logic; -- Oscillator 2 Saw 1
-          FMC1_HPC_LA07_P : out std_logic; -- Oscillator 2 Triangle
-          FMC1_HPC_LA07_N : out std_logic; -- Oscillator 2 Square
-          FMC1_HPC_LA08_P : out std_logic; -- Oscillator 2 Sine
-          FMC1_HPC_LA12_N : out std_logic; -- Filter LP
-          FMC1_HPC_LA19_P : out std_logic; -- Filter BP
-          FMC1_HPC_LA19_N : out std_logic  -- Filter HP
+    -- MCP3202_ADC
+    FMC1_HPC_LA20_P : out std_logic; -- CS
+    FMC1_HPC_LA20_N : out std_logic; -- CLK
+    FMC1_HPC_LA21_P : in std_logic;  -- OUT
+    FMC1_HPC_LA21_N : out std_logic; -- IN
+
+    ---- Encoders
+    -- LFO1 dutycycle
+    FMC1_HPC_HA08_N : in std_logic; -- Button
+    FMC1_HPC_HA09_P : in std_logic; -- A
+    FMC1_HPC_HA09_N : in std_logic; -- B
+    -- LFO2 Offset
+    FMC1_HPC_HA18_N : in std_logic; -- Button
+    FMC1_HPC_HA19_P : in std_logic; -- A
+    FMC1_HPC_HA19_N : in std_logic; -- B
+    -- Oscillator 1  wavetype
+    FMC1_HPC_LA08_N : in std_logic; -- Button
+    FMC1_HPC_LA09_P : in std_logic; -- A
+    FMC1_HPC_LA09_N : in std_logic; -- B
+    -- Oscillator 1 dutycycle
+    FMC1_HPC_HA11_P : in std_logic; -- Button
+    FMC1_HPC_HA11_N : in std_logic; -- A
+    FMC1_HPC_HA12_P : in std_logic; -- B
+    -- Oscillator 2 wavetype
+    FMC1_HPC_HA04_P : in std_logic; -- Button
+    FMC1_HPC_HA04_N : in std_logic; -- A
+    FMC1_HPC_HA05_P : in std_logic; -- B
+    -- Oscillator 2 dutycycle
+    FMC1_HPC_HA14_P : in std_logic; -- Button
+    FMC1_HPC_HA14_N : in std_logic; -- A
+    FMC1_HPC_HA15_P : in std_logic; -- B
+    -- Filter type/resonance
+    FMC1_HPC_HA05_N : in std_logic; -- Button
+    FMC1_HPC_HA06_P : in std_logic; -- A
+    FMC1_HPC_HA06_N : in std_logic; -- B
+    -- Filter cutoff
+    FMC1_HPC_HA15_N : in std_logic; -- Button
+    FMC1_HPC_HA16_P : in std_logic; -- A
+    FMC1_HPC_HA16_N : in std_logic; -- B
+    -- Echo length
+    FMC1_HPC_HA07_P : in std_logic; -- Button
+    FMC1_HPC_HA07_N : in std_logic; -- A
+    FMC1_HPC_HA08_P : in std_logic; -- B
+    -- Envelope attack
+    FMC1_HPC_HA12_N : in std_logic; -- Button
+    FMC1_HPC_HA13_P : in std_logic; -- A
+    FMC1_HPC_HA13_N : in std_logic; -- B
+    -- Envelope release
+    FMC1_HPC_HA02_N : in std_logic; -- Button
+    FMC1_HPC_HA03_P : in std_logic; -- A
+    FMC1_HPC_HA03_N : in std_logic; -- B
+
+    -- LEDs
+    FMC1_HPC_LA02_N : out std_logic; -- Oscillator 1 Saw 2
+    FMC1_HPC_LA03_P : out std_logic; -- Oscillator 1 Saw 1
+    FMC1_HPC_LA03_N : out std_logic; -- Oscillator 1 Triangle
+    FMC1_HPC_LA04_P : out std_logic; -- Oscillator 1 Square
+    FMC1_HPC_LA04_N : out std_logic; -- Oscillator 1 Sine
+    FMC1_HPC_LA05_P : out std_logic; -- Oscillator 2 Saw 2
+    FMC1_HPC_LA05_N : out std_logic; -- Oscillator 2 Saw 1
+    FMC1_HPC_LA07_P : out std_logic; -- Oscillator 2 Triangle
+    FMC1_HPC_LA07_N : out std_logic; -- Oscillator 2 Square
+    FMC1_HPC_LA08_P : out std_logic; -- Oscillator 2 Sine
+    FMC1_HPC_LA12_N : out std_logic; -- Filter LP
+    FMC1_HPC_LA19_P : out std_logic; -- Filter BP
+    FMC1_HPC_LA19_N : out std_logic  -- Filter HP
   );
 end synth_top;
 
 architecture Behavioral of synth_top is
   signal clk, reset, I, IB : std_logic;
 
+  -- NOT FIXED ENCODER VALUES
+  signal ENC_LFO1_duty_rate, ENC_LFO1_duty_depth, ENC_LFO2_offset_rate, ENC_LFO2_offset_depth, ENC_OSC2_offset, ENC_Echo_length, ENC_Echo_gain, ENC_Filter_Q : integer range 0 to 100 := 50;
+
   -- Values changed by encoders
   signal multi : integer range 1 to 1000 := 1;
-  signal LFO1_duty_rate, LFO1_duty_depth, LFO2_offset_rate, LFO2_offset_depth, OSC2_offset, Echo_length, Echo_gain : integer range 0 to 100 := 50;
-  signal OSC1_wavetype, OSC2_wavetype : std_logic_vector(2 downto 0);
-  signal OSC1_dutycycle, OSC2_dutycycle : integer range 0 to 100 := 50;
-  signal Filter_type : integer range 0 to 2 := 0;
-  signal Filter_Q : real range 0.0 to 10.0 := 0.7;
+  signal ENC_Envelope_attack, ENC_Envelope_release : integer range 0 to 65535 := 32767;
+  signal ENC_OSC1_dutycycle, ENC_OSC2_dutycycle : integer range 0 to 100 := 50;
+  signal ENC_OSC1_wavetype, ENC_OSC2_wavetype : std_logic_vector(2 downto 0);
+  signal Filter_type : FILTER := LP;
   signal Filter_cutoff : integer range 0 to 20000 := 4000;
-  signal Envelope_attack, Envelope_release : integer range 0 to 65535 := 10000;
 
   -- Encoder states
   signal LFO1_ES, LFO2_ES, OSC2_ES, Filter_ES, Echo_ES : std_logic := '0';
@@ -107,38 +127,78 @@ architecture Behavioral of synth_top is
   signal OSC1_leds, OSC2_leds : std_logic_vector(4 downto 0) := (others => '0');
   signal Filter_leds : std_logic_vector(2 downto 0) := (others => '0');
 
-  --  Encoder component
-  component encoderTop is
-  port( clk    : in std_logic;
-        reset  : in std_logic;
-        A      : in std_logic;
-        B      : in std_logic;
-        C      : in std_logic;
-        change : out std_logic;
-        dir    : out std_logic;
-        btn    : out std_logic);
-  end component;
-
+  --  Encoder signals
   type encoderArray is array (0 to 10) of std_logic_vector(2 downto 0);
   signal encoders : encoderArray;
 
-  -- LCD component
-  component LCD_main is
-    Generic ( input_clk : integer;
-              i2c_bus_clk : integer); -- Delay to wait between commands
-    Port (  clk : in  std_logic;
-            reset : in  std_logic;
-            lcd_bl : in std_logic;
-            value : in std_logic_vector(15 downto 0);
-            value_type : in integer range 0 to 15;
-            lcd_addr : in std_logic_vector(6 downto 0);
-            i2c_sda : inout std_logic;
-            i2c_scl : inout std_logic);
-  end component;
+  -- Prescaler signals
+  signal preClk40k : std_logic := '0';
+  signal preClkASR : std_logic := '0';
+  signal preClkADC : std_logic := '0';
 
+  -- LCD signals
   signal value : std_logic_vector(15 downto 0) := (others => '0');
   signal value_type : integer range 0 to 15 := 0;
 
+  -- Oscillator 1 signals
+  signal OSC1note   : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(36,8));
+  signal OSC1semi   : std_logic_vector (4 downto 0) := (others => '0');
+  signal OSC1output : std_logic_vector (11 downto 0) := (others => '0');
+  signal OSC1dutycycle  : std_logic_vector (6 downto 0) := (others => '0');
+  signal OSC1wavetype : WAVE := SINE;
+
+  -- Oscillator 2 signals
+  signal OSC2note   : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(36,8));
+  signal OSC2semi   : std_logic_vector (4 downto 0) := (others => '0');
+  signal OSC2output : std_logic_vector (11 downto 0) := (others => '0');
+  signal OSC2dutycycle  : std_logic_vector (6 downto 0) := (others => '0');
+  signal OSC2wavetype : WAVE := SINE;
+
+  -- ASR Envelope signals
+  signal ASR_atk_time, ASR_rls_time : std_logic_vector(15 downto 0) := (others => '0');
+  signal ASR_in, ASR_out : std_logic_vector(11 downto 0) := (others => '0');
+  signal ASR_noteState   : std_logic := '0';
+
+  -- IIR signals
+  signal Filter_Q  : sfixed(16 downto -12);
+  signal filterOut : std_logic_vector(11 downto 0) := (others => '0');
+  signal filterIn  : std_logic_vector(11 downto 0) := (others => '0');
+  signal EN_Filter : std_logic := '1';
+
+  -- I2S Transmitter signals
+  signal I2S_data : std_logic_vector(11 downto 0);
+  signal I2S_sck  : std_logic;
+  signal I2S_ws   : std_logic;
+  signal I2S_sd   : std_logic;
+
+  -- ADC signals
+  constant ADC_settings : std_logic_vector(3 downto 0) := "1101";
+  signal ADC_conversion : std_logic_vector(11 downto 0);
+  signal ADC_cs    : std_logic;
+  signal ADC_sck   : std_logic;
+  signal ADC_si    : std_logic;
+  signal ADC_so    : std_logic;
+  signal ADC_get   : std_logic;
+  signal ADC_rdy   : std_logic;
+  signal ADC_start : std_logic;
+
+  -- DAC signals
+  signal DACdata  : std_logic_vector(15 DOWNTO 0);
+  signal DACstart : std_logic;
+  signal DACready : std_logic;
+
+  -- -- MIDI signals
+  -- TYPE States IS (Idle, Recieved);
+  -- SIGNAL MIDI_note_state 	: States;
+  -- signal Clock_Enable : std_logic;
+  -- signal Uart_send    : std_logic;
+  -- signal Uart_Dec     : std_logic_vector(7 downto 0);
+  -- signal Note_data    : std_logic_vector(15 downto 0);
+  -- signal Note_ready   : std_logic;
+  -- signal Note_state   : std_logic;
+  -- signal uartLED      : std_logic;
+  -- signal Note_out     : std_logic_vector(7 downto 0);
+  -- signal Note_rec     : std_logic_vector(7 downto 0);
 
 begin
   -- Reset signal
@@ -159,79 +219,227 @@ begin
   FMC1_HPC_LA19_P <= Filter_leds(1); -- Filter BP
   FMC1_HPC_LA19_N <= Filter_leds(2); -- Filter HP
 
-LCD_main_inst: LCD_main
-  generic map (200_000_000, 30_000)
-  port map (clk, reset, '1', value, value_type, "0100111", PMOD_2, PMOD_3);
+  -- Oscillator 1 wavetype LED changer
+  with OSC1wavetype select
+    OSC1_leds <=  "00001" when SINE, -- Sine
+                  "00010" when SQUARE, -- Square
+                  "00100" when TRIANGLE, -- Triangle
+                  "01000" when SAW1, -- Saw 1
+                  "10000" when SAW2, -- Saw 2
+                  "11111" when others; -- Other wave
 
-Encoder_LFO_duty: encoderTop
+  -- Oscillator 2 wavetype LED changer
+  with OSC2wavetype select
+    OSC2_leds <=  "00001" when SINE, -- Sine
+                  "00010" when SQUARE, -- Square
+                  "00100" when TRIANGLE, -- Triangle
+                  "01000" when SAW1, -- Saw 1
+                  "10000" when SAW2, -- Saw 2
+                  "11111" when others; -- Other wave
+
+  -- Filter type LED changer
+  with Filter_type select
+    Filter_leds <=  "001" when LP, -- LP
+                    "010" when BP, -- BP
+                    "100" when HP; -- HP
+
+-- Clock scaler for IIR filter
+prescale_comp: entity work.prescaler
+  generic map ( prescale => 4000 )
+  port map ( clk, preClk40k );
+
+-- Clock scaler for ASR Envelope
+prescale_comp_ASR: entity work.prescaler
+  generic map ( prescale => 2 )
+  port map ( clk, preClkASR );
+
+-- -- UART clock sclaer
+-- ClockEn_comp: entity work.ClockEnable
+-- 	generic map(DesiredFreq => 312500, ClockFreq => 200_000_000)
+-- 	port map(clk, reset, Clock_Enable);
+
+-- Clock scaler for ADC
+ADC_enable_comp: entity work.prescaler
+  generic map ( prescale => 8 )
+  port map ( clk, preClkADC );
+
+-- -- UART midi reciever
+-- Uart_comp: entity work.Uart
+-- 	port map( FMC1_HPC_LA22_P, reset, Clock_Enable, Uart_send, Uart_Dec );
+--
+-- -- MIDI decoder
+-- MIDI_dec_comp: entity work.MIDI_Decoder
+-- 	port map( Uart_Dec, Uart_send, reset, Clock_Enable, Note_data, Note_ready, Note_state );
+--
+-- -- MIDI to oscillator translator
+-- MIDI_to_osc_comp: entity work.MIDI_to_Osc
+-- 	port map( Note_data, Note_state, Note_ready, reset, Clock_Enable, ASR_noteState, Note_out );
+
+-- Oscillator 1 component
+Oscillator1_comp: entity work.oscillator
+  port map( clk, reset, '1', OSC1wavetype, OSC1note, OSC1semi, OSC1dutycycle, OSC1output );
+  OSC1dutycycle <= std_logic_vector(to_unsigned(ENC_OSC1_dutycycle, 7));
+  OSC1wavetype <= to_wave(ENC_OSC1_wavetype);
+
+-- Oscillator 1 component
+Oscillator2_comp: entity work.oscillator
+  port map( clk, reset, '1', OSC2wavetype, OSC2note, OSC2semi, OSC2dutycycle, OSC2output );
+  OSC2dutycycle <= std_logic_vector(to_unsigned(ENC_OSC2_dutycycle, 7));
+  OSC2wavetype <= to_wave(ENC_OSC2_wavetype);
+
+-- ASR Envelope component
+ASR_comp: entity work.ASR
+  port map( clk, reset, ASR_in, ASR_noteState, ASR_atk_time, ASR_rls_time, ASR_out );
+  ASR_in <= OSC1output;
+  ASR_atk_time <= std_logic_vector(to_signed(ENC_Envelope_attack, 16));
+  ASR_rls_time <= std_logic_vector(to_signed(ENC_Envelope_release, 16));
+
+-- IIR filter component
+IIR_comp: entity work.IIR
+  port map ( preClk40k, clk, reset, Filter_type, Filter_cutoff, Filter_Q, filterIn, filterOut );
+  filterIn <= ASR_out;
+  Filter_Q <= to_sfixed(0.7071, Filter_Q);
+
+-- I2S Transmitter
+I2S_comp: entity work.I2S_transmitter
+	generic map ( WIDTH => 12 )
+	port map( preClk40k, I2S_data, I2S_sck, I2S_ws, I2S_sd );
+  --FMC1_HPC_LA02_P <= I2S_sd;
+  I2S_data <= filterOut;
+
+-- DAC component
+DAC_comp: entity work.AD5065_DAC
+    port map( clk, reset, DACdata, DACstart, DACready, XADC_GPIO_1, XADC_GPIO_3, XADC_GPIO_2, XADC_GPIO_0 );
+
+-- ADC component
+ADC_comp: entity work.MCP3202_ADC
+  generic map( WIDTH => 12 )
+  port map( preClkADC, ADC_cs, ADC_sck, ADC_si, ADC_so, ADC_conversion, ADC_settings, ADC_get, ADC_rdy );
+  FMC1_HPC_LA20_P <= ADC_cs;
+  FMC1_HPC_LA20_N <= ADC_sck;
+  ADC_si <= FMC1_HPC_LA21_P;
+  FMC1_HPC_LA21_N <= ADC_so;
+
+-- LCD driver component
+LCD_main_comp: entity work.LCD_main
+  generic map ( 200_000_000, 30_000 )
+  port map ( clk, reset, '1', value, value_type, "0100111", PMOD_2, PMOD_3 );
+
+-- Encoder components
+Encoder_LFO_duty: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA09_P, FMC1_HPC_HA09_N, FMC1_HPC_HA08_N, encoders(0)(0), encoders(0)(1), encoders(0)(2) );
-
-Encoder_LFO_offset: encoderTop
+Encoder_LFO_offset: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA19_P, FMC1_HPC_HA19_N, FMC1_HPC_HA18_N, encoders(1)(0), encoders(1)(1), encoders(1)(2) );
-
-Encoder_OSC1_wave: encoderTop
+Encoder_OSC1_wave: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_LA09_P, FMC1_HPC_LA09_N, FMC1_HPC_LA08_N, encoders(2)(0), encoders(2)(1), encoders(2)(2) );
-
-Encoder_OSC1_duty: encoderTop
+Encoder_OSC1_duty: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA11_N, FMC1_HPC_HA12_P, FMC1_HPC_HA11_P, encoders(3)(0), encoders(3)(1), encoders(3)(2) );
-
-Encoder_OSC2_wave: encoderTop
-  port map( clk, '1', FMC1_HPC_HA04_N, FMC1_HPC_HA05_P, FMC1_HPC_HA05_P, encoders(4)(0), encoders(4)(1), encoders(4)(2) );
-
-Encoder_OSC2_duty_offset: encoderTop
+Encoder_OSC2_wave: entity work.encoderTop
+  port map( clk, '1', FMC1_HPC_HA04_N, FMC1_HPC_HA05_P, FMC1_HPC_HA04_P, encoders(4)(0), encoders(4)(1), encoders(4)(2) );
+Encoder_OSC2_duty_offset: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA14_N, FMC1_HPC_HA15_P, FMC1_HPC_HA14_P, encoders(5)(0), encoders(5)(1), encoders(5)(2) );
-
-Encoder_Filter_type: encoderTop
+Encoder_Filter_type: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA06_P, FMC1_HPC_HA06_N, FMC1_HPC_HA05_N, encoders(6)(0), encoders(6)(1), encoders(6)(2) );
-
-Encoder_Filter_cut: encoderTop
+Encoder_Filter_cut: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA16_P, FMC1_HPC_HA16_N, FMC1_HPC_HA15_N, encoders(7)(0), encoders(7)(1), encoders(7)(2) );
-
-Encoder_Echo_length: encoderTop
+Encoder_Echo_length: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA07_N, FMC1_HPC_HA08_P, FMC1_HPC_HA07_P, encoders(8)(0), encoders(8)(1), encoders(8)(2) );
-
-Encoder_Envelope_attack: encoderTop
+Encoder_Envelope_attack: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA13_P, FMC1_HPC_HA13_N, FMC1_HPC_HA12_N, encoders(9)(0), encoders(9)(1), encoders(9)(2) );
-
-Encoder_Envelope_release: encoderTop
+Encoder_Envelope_release: entity work.encoderTop
   port map( clk, '1', FMC1_HPC_HA03_P, FMC1_HPC_HA03_N, FMC1_HPC_HA02_N, encoders(10)(0), encoders(10)(1), encoders(10)(2) );
 
+-- Clock driver
 IBUFDS_inst: IBUFDS
   generic map( IOSTANDARD => "LVDS_25" )
   port map ( O => clk, I => I, IB => IB );  -- clock buffer output, diff_p clock buffer input, diff_n clock buffer input
   I  <= SYSCLK_P;
   IB <= SYSCLK_N;
 
+-- -- MIDI controller
+-- MIDI_Process:process(clk)
+-- begin
+-- 	if rising_edge(clk) then
+-- 		case MIDI_note_state is
+--   		when Idle =>
+--   			if ASR_Note_State = '1' then
+--   				Note_rec <= Note_out;
+--   				MIDI_note_state <= Recieved;
+--   			end if;
+--   		when Recieved =>
+--   			if ASR_Note_State = '0' then
+--   				MIDI_note_state <= Idle;
+--   			end if;
+-- 		end case;
+-- 	end if;
+-- end process;
+
+-- ADC process
+ADC_process:process(clk)
+begin
+  if rising_edge(clk) then
+    --gpioLEDS(7 downto 1) <= ADC_conversion(11 downto 5);
+    if preClk40k = '1' then
+      ADC_start <= '1';
+      ADC_get <= '1';
+    end if;
+    if ADC_start = '1' and ADC_rdy = '0' then
+      ADC_start <= '0';
+      ADC_get <= '0';
+    end if;
+  end if;
+end process;
+
+-- DAC process
+DAC_process:process(clk)
+begin
+  if rising_edge(clk) then
+    if preClk40k = '1' then
+      DACstart <= '1';
+      if EN_Filter = '1' then
+        DACdata(15 downto 4) <= std_logic_vector(signed(filterOut) + 2048);
+        DACdata(3 downto 0) <= (OTHERS => '0');
+      else
+        DACdata(15 downto 4) <= std_logic_vector(signed(ASR_out) + 2048);
+        DACdata(3 downto 0) <= "0000";
+      end if;
+    else
+      DACstart <= '0';
+    end if;
+  end if;
+end process;
+
+-- Encoder process for changing LFO duty rate and depth
 Encoder_LFO_duty_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(0)(0) = '1' then
       if encoders(0)(1) = '1' then
         if LFO1_ES = '1' then  -- LFO duty dept
-          if LFO1_duty_depth < 100-multi then
-            LFO1_duty_depth <= LFO1_duty_depth + multi;
+          if ENC_LFO1_duty_depth < 100-multi then
+            ENC_LFO1_duty_depth <= ENC_LFO1_duty_depth + multi;
           else
-            LFO1_duty_depth <= 100;
+            ENC_LFO1_duty_depth <= 100;
           end if;
         else                   -- LFO duty rate
-          if LFO1_duty_rate < 100-multi then
-            LFO1_duty_rate <= LFO1_duty_rate + multi;
+          if ENC_LFO1_duty_rate < 100-multi then
+            ENC_LFO1_duty_rate <= ENC_LFO1_duty_rate + multi;
           else
-            LFO1_duty_rate <= 100;
+            ENC_LFO1_duty_rate <= 100;
           end if;
         end if;
       else
         if LFO1_ES = '1' then -- LFO duty dept
-          if LFO1_duty_depth > multi then
-            LFO1_duty_depth <= LFO1_duty_depth - multi;
+          if ENC_LFO1_duty_depth > multi then
+            ENC_LFO1_duty_depth <= ENC_LFO1_duty_depth - multi;
           else
-            LFO1_duty_depth <= multi;
+            ENC_LFO1_duty_depth <= multi;
           end if;
         else                  -- LFO duty rate
-          if LFO1_duty_rate > multi then
-            LFO1_duty_rate <= LFO1_duty_rate - multi;
+          if ENC_LFO1_duty_rate > multi then
+            ENC_LFO1_duty_rate <= ENC_LFO1_duty_rate - multi;
           else
-            LFO1_duty_rate <= multi;
+            ENC_LFO1_duty_rate <= multi;
           end if;
         end if;
       end if;
@@ -242,36 +450,37 @@ begin
   end if;
 end process;
 
+-- Encoder process for changing LFO offset rate and depth
 Encoder_LFO_offset_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(1)(0) = '1' then
       if encoders(1)(1) = '1' then
         if LFO2_ES = '1' then  -- LFO offset dept
-          if LFO2_offset_depth < 100-multi then
-            LFO2_offset_depth <= LFO2_offset_depth + multi;
+          if ENC_LFO2_offset_depth < 100-multi then
+            ENC_LFO2_offset_depth <= ENC_LFO2_offset_depth + multi;
           else
-            LFO2_offset_depth <= 100;
+            ENC_LFO2_offset_depth <= 100;
           end if;
         else                   -- LFO offset rate
-          if LFO2_offset_rate < 100-multi then
-            LFO2_offset_rate <= LFO2_offset_rate + multi;
+          if ENC_LFO2_offset_rate < 100-multi then
+            ENC_LFO2_offset_rate <= ENC_LFO2_offset_rate + multi;
           else
-            LFO2_offset_rate <= 100;
+            ENC_LFO2_offset_rate <= 100;
           end if;
         end if;
       else
         if LFO2_ES = '1' then -- LFO offset dept
-          if LFO2_offset_depth > multi then
-            LFO2_offset_depth <= LFO2_offset_depth - multi;
+          if ENC_LFO2_offset_depth > multi then
+            ENC_LFO2_offset_depth <= ENC_LFO2_offset_depth - multi;
           else
-            LFO2_offset_depth <= multi;
+            ENC_LFO2_offset_depth <= multi;
           end if;
         else                  -- LFO offset rate
-          if LFO2_offset_rate > multi then
-            LFO2_offset_rate <= LFO2_offset_rate - multi;
+          if ENC_LFO2_offset_rate > multi then
+            ENC_LFO2_offset_rate <= ENC_LFO2_offset_rate - multi;
           else
-            LFO2_offset_rate <= multi;
+            ENC_LFO2_offset_rate <= multi;
           end if;
         end if;
       end if;
@@ -282,83 +491,87 @@ begin
   end if;
 end process;
 
+-- Encoder process for changing Oscillator 1 wavetype
 Encoder_OSC1_wave_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(2)(0) = '1' then
       if encoders(2)(1) = '1' then
-        OSC1_wavetype <= std_logic_vector(unsigned(OSC1_wavetype)+1);
+        ENC_OSC1_wavetype <= std_logic_vector(unsigned(ENC_OSC1_wavetype)+1);
       else
-        OSC1_wavetype <= std_logic_vector(unsigned(OSC1_wavetype)-1);
+        ENC_OSC1_wavetype <= std_logic_vector(unsigned(ENC_OSC1_wavetype)-1);
       end if;
     end if;
   end if;
 end process;
 
+-- Encoder process for changing Oscillator 1 dutycycle
 Encoder_OSC1_duty_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(3)(0) = '1' then
       if encoders(3)(1) = '1' then
-        if OSC1_dutycycle < 100-multi then
-          OSC1_dutycycle <= OSC1_dutycycle + multi;
+        if ENC_OSC1_dutycycle < 100-multi then
+          ENC_OSC1_dutycycle <= ENC_OSC1_dutycycle + multi;
         else
-          OSC1_dutycycle <= 100;
+          ENC_OSC1_dutycycle <= 100;
         end if;
       else
-        if OSC1_dutycycle > multi then
-          OSC1_dutycycle <= OSC1_dutycycle - multi;
+        if ENC_OSC1_dutycycle > multi then
+          ENC_OSC1_dutycycle <= ENC_OSC1_dutycycle - multi;
         else
-          OSC1_dutycycle <= multi;
+          ENC_OSC1_dutycycle <= multi;
         end if;
       end if;
     end if;
   end if;
 end process;
 
+-- Encoder process for changing Oscillator 2 wavetype
 Encoder_OSC2_wave_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(4)(0) = '1' then
       if encoders(4)(1) = '1' then
-        OSC2_wavetype <= std_logic_vector(unsigned(OSC2_wavetype)+1);
+        ENC_OSC2_wavetype <= std_logic_vector(unsigned(ENC_OSC2_wavetype)+1);
       else
-        OSC2_wavetype <= std_logic_vector(unsigned(OSC2_wavetype)-1);
+        ENC_OSC2_wavetype <= std_logic_vector(unsigned(ENC_OSC2_wavetype)-1);
       end if;
     end if;
   end if;
 end process;
 
+-- Encoder process for changing Oscillator 2 dutycycle and offset
 Encoder_OSC2_duty_offset_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(5)(0) = '1' then
       if encoders(5)(1) = '1' then
         if OSC2_ES = '1' then -- duty
-          if OSC2_dutycycle < 100-multi then
-            OSC2_dutycycle <= OSC2_dutycycle + multi;
+          if ENC_OSC2_dutycycle < 100-multi then
+            ENC_OSC2_dutycycle <= ENC_OSC2_dutycycle + multi;
           else
-            OSC2_dutycycle <= 100;
+            ENC_OSC2_dutycycle <= 100;
           end if;
         else -- offset
-          if OSC2_offset < 100-multi then
-            OSC2_offset <= OSC2_offset + multi;
+          if ENC_OSC2_offset < 100-multi then
+            ENC_OSC2_offset <= ENC_OSC2_offset + multi;
           else
-            OSC2_offset <= 100;
+            ENC_OSC2_offset <= 100;
           end if;
         end if;
       else
         if OSC2_ES = '1' then -- duty
-          if OSC2_dutycycle > multi then
-            OSC2_dutycycle <= OSC2_dutycycle - multi;
+          if ENC_OSC2_dutycycle > multi then
+            ENC_OSC2_dutycycle <= ENC_OSC2_dutycycle - multi;
           else
-            OSC2_dutycycle <= multi;
+            ENC_OSC2_dutycycle <= multi;
           end if;
         else  -- offset
-          if OSC2_offset > multi then
-            OSC2_offset <= OSC2_offset - multi;
+          if ENC_OSC2_offset > multi then
+            ENC_OSC2_offset <= ENC_OSC2_offset - multi;
           else
-            OSC2_offset <= multi;
+            ENC_OSC2_offset <= multi;
           end if;
         end if;
       end if;
@@ -369,6 +582,7 @@ begin
   end if;
 end process;
 
+-- Encoder process for changing Filter type and Q
 Encoder_Filter_type_proc:process(clk)
 begin
   if rising_edge(clk) then
@@ -377,13 +591,25 @@ begin
         if Filter_ES = '1' then -- Q
 
         else -- Filter type
-          Filter_type <= Filter_type+1;
+          if Filter_type = LP then
+            Filter_type <= BP;
+          elsif Filter_type = BP then
+            Filter_type <= HP;
+          else
+            Filter_type <= LP;
+          end if;
         end if;
       else
         if Filter_ES = '1' then -- Q
 
         else -- Filter type
-          Filter_type <= Filter_type-1;
+          if Filter_type = LP then
+            Filter_type <= HP;
+          elsif Filter_type = BP then
+            Filter_type <= LP;
+          else
+            Filter_type <= BP;
+          end if;
         end if;
       end if;
     end if;
@@ -393,6 +619,7 @@ begin
   end if;
 end process;
 
+-- Encoder process for changing Filter cutoff
 Encoder_Filter_cut_proc:process(clk)
 begin
   if rising_edge(clk) then
@@ -414,36 +641,37 @@ begin
   end if;
 end process;
 
+-- Encoder process for changing Echo length and gain
 Encoder_Echo_length_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(8)(0) = '1' then
       if encoders(8)(1) = '1' then
         if Echo_ES = '1' then
-          if Echo_length < 100-multi then
-            Echo_length <= Echo_length + multi;
+          if ENC_Echo_length < 100-multi then
+            ENC_Echo_length <= ENC_Echo_length + multi;
           else
-            Echo_length <= 100;
+            ENC_Echo_length <= 100;
           end if;
         else
-          if Echo_gain < 100-multi then
-            Echo_gain <= Echo_gain + multi;
+          if ENC_Echo_gain < 100-multi then
+            ENC_Echo_gain <= ENC_Echo_gain + multi;
           else
-            Echo_gain <= 100;
+            ENC_Echo_gain <= 100;
           end if;
         end if;
       else
         if Echo_ES = '1' then
-          if Echo_length > multi then
-            Echo_length <= Echo_length - multi;
+          if ENC_Echo_length > multi then
+            ENC_Echo_length <= ENC_Echo_length - multi;
           else
-            Echo_length <= multi;
+            ENC_Echo_length <= multi;
           end if;
         else
-          if Echo_gain > multi then
-            Echo_gain <= Echo_gain - multi;
+          if ENC_Echo_gain > multi then
+            ENC_Echo_gain <= ENC_Echo_gain - multi;
           else
-            Echo_gain <= multi;
+            ENC_Echo_gain <= multi;
           end if;
         end if;
       end if;
@@ -454,48 +682,51 @@ begin
   end if;
 end process;
 
+-- Encoder process for changing Envelope attack
 Encoder_Envelope_attack_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(9)(0) = '1' then
       if encoders(9)(1) = '1' then
-        if Envelope_attack < 65535-multi then
-          Envelope_attack <= Envelope_attack + multi;
+        if ENC_Envelope_attack < 65535-multi then
+          ENC_Envelope_attack <= ENC_Envelope_attack + multi;
         else
-          Envelope_attack <= 65535;
+          ENC_Envelope_attack <= 65535;
         end if;
       else
-        if Envelope_attack > multi then
-          Envelope_attack <= Envelope_attack - multi;
+        if ENC_Envelope_attack > multi then
+          ENC_Envelope_attack <= ENC_Envelope_attack - multi;
         else
-          Envelope_attack <= multi;
+          ENC_Envelope_attack <= multi;
         end if;
       end if;
     end if;
   end if;
 end process;
 
+-- Encoder process for changing Envelope release
 Encoder_Envelope_release_proc:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(10)(0) = '1' then
       if encoders(10)(1) = '1' then
-        if Envelope_release < 65535-multi then
-          Envelope_release <= Envelope_release + multi;
+        if ENC_Envelope_release < 65535-multi then
+          ENC_Envelope_release <= ENC_Envelope_release + multi;
         else
-          Envelope_release <= 65535;
+          ENC_Envelope_release <= 65535;
         end if;
       else
-        if Envelope_release > multi then
-          Envelope_release <= Envelope_release - multi;
+        if ENC_Envelope_release > multi then
+          ENC_Envelope_release <= ENC_Envelope_release - multi;
         else
-          Envelope_release <= multi;
+          ENC_Envelope_release <= multi;
         end if;
       end if;
     end if;
   end if;
 end process;
 
+-- Process for changing value multiplier for encoders without any other button function
 Multiplier:process(clk)
 begin
   if rising_edge(clk) then
@@ -513,40 +744,41 @@ begin
   end if;
 end process;
 
+-- Process for changing the content of the LCD to the must recently changed one
 LCD_value_type:process(clk)
 begin
   if rising_edge(clk) then
     if encoders(0)(0) = '1' then
       if LFO1_ES = '1' then
         value_type <= 11;   -- LFO duty dept
-        value <= std_logic_vector(to_unsigned(LFO1_duty_depth, 16));
+        value <= std_logic_vector(to_unsigned(ENC_LFO1_duty_depth, 16));
       else
         value_type <= 12; -- LFO duty rate
-        value <= std_logic_vector(to_unsigned(LFO1_duty_rate, 16));
+        value <= std_logic_vector(to_unsigned(ENC_LFO1_duty_rate, 16));
       end if;
     elsif encoders(1)(0) = '1' then
       if LFO2_ES = '1' then
         value_type <= 13;   -- LFO offset depth
-        value <= std_logic_vector(to_unsigned(LFO2_offset_depth, 16));
+        value <= std_logic_vector(to_unsigned(ENC_LFO2_offset_depth, 16));
       else
         value_type <= 14; -- LFO offset rate
-        value <= std_logic_vector(to_unsigned(LFO2_offset_rate, 16));
+        value <= std_logic_vector(to_unsigned(ENC_LFO2_offset_rate, 16));
       end if;
     elsif encoders(3)(0) = '1' then -- OSC1 duty
       value_type <= 2;
-      value <= std_logic_vector(to_unsigned(OSC1_dutycycle, 16));
+      value <= std_logic_vector(to_unsigned(ENC_OSC1_dutycycle, 16));
     elsif encoders(5)(0) = '1' then
       if OSC2_ES = '1' then
         value_type <= 3;   -- if duty
-        value <= std_logic_vector(to_unsigned(OSC2_dutycycle, 16));
+        value <= std_logic_vector(to_unsigned(ENC_OSC2_dutycycle, 16));
       else
         value_type <= 4; -- if offset
-        value <= std_logic_vector(to_unsigned(OSC2_offset, 16));
+        value <= std_logic_vector(to_unsigned(ENC_OSC2_offset, 16));
       end if;
     elsif encoders(6)(0) = '1' then
       if Filter_ES = '1' then
         value_type <= 5; -- only if Q mode
-        --value <= Filter_Q;
+        --value <= ENC_Filter_Q;
       end if;
     elsif encoders(7)(0) = '1' then
       value_type <= 6;
@@ -554,17 +786,17 @@ begin
     elsif encoders(8)(0) = '1' then
       if Echo_ES = '1' then
         value_type <= 7;   -- if echo length
-        value <= std_logic_vector(to_unsigned(Echo_length, 16));
+        value <= std_logic_vector(to_unsigned(ENC_Echo_length, 16));
       else
         value_type <= 8; -- if echo gain
-        value <= std_logic_vector(to_unsigned(Echo_gain, 16));
+        value <= std_logic_vector(to_unsigned(ENC_Echo_gain, 16));
       end if;
     elsif encoders(9)(0) = '1' then
       value_type <= 9;
-      value <= std_logic_vector(to_unsigned(Envelope_attack, 16));
+      value <= std_logic_vector(to_unsigned(ENC_Envelope_attack, 16));
     elsif encoders(10)(0) = '1' then
       value_type <= 10;
-      value <= std_logic_vector(to_unsigned(Envelope_release, 16));
+      value <= std_logic_vector(to_unsigned(ENC_Envelope_release, 16));
     end if;
   end if;
 end process;
