@@ -29,7 +29,7 @@ begin
         shifter:for i in WIDTH-1 downto 1 loop
             output_tmp(i) <= output_tmp(i-1);
         end loop;
+        output <= output_tmp;
     end if;
-    output <= output_tmp;
 end process;
 end Behavioral;

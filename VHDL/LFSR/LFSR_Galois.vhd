@@ -29,7 +29,7 @@ begin
         shifter:for i in 0 to WIDTH-2 loop
             output_tmp(i) <= output_tmp(i+1) XOR (feedback AND POLY_PAT(i));
         end loop;
+        output <= output_tmp;
     end if;
-    output <= output_tmp;
 end process;
 end Behavioral;

@@ -4,9 +4,13 @@ library IEEE;
     use IEEE.NUMERIC_STD.ALL;
 library UNISIM;
     use UNISIM.VComponents.ALL;
-library IEEE_proposed;
-    use IEEE_proposed.fixed_float_types.all;
-    use IEEE_proposed.fixed_pkg.all;
+--library IEEE_proposed;
+--    use IEEE_proposed.fixed_float_types.all;
+--    use IEEE_proposed.fixed_pkg.all;
+
+-- IEEE_proposed
+use work.fixed_float_types.all;
+use work.fixed_pkg.all;
 
 -- Own libraries
 use work.ascii.ALL;
@@ -18,14 +22,24 @@ entity synth_top is
     SYSCLK_P  : in std_logic;
     SYSCLK_N  : in std_logic;
 
+    -- Test output
+    test_out : out std_logic;
+
     -- VCC
     FMC1_HPC_HA10_P : out std_logic := '1';
 
     -- GPIO switches
     GPIO_SW_N : in std_logic; -- reset
+    GPIO_SW_S : in std_logic; -- reset
 
     -- MIDI in
     FMC1_HPC_LA22_P : in std_logic;
+
+    -- LEDs
+    GPIO_LED_0 : out std_logic;
+    GPIO_LED_1 : out std_logic;
+    GPIO_LED_2 : out std_logic;
+    GPIO_LED_3 : out std_logic;
 
     -- PMOD
     PMOD_2 : inout std_logic; -- LCD-SDA
@@ -42,6 +56,14 @@ entity synth_top is
     FMC1_HPC_LA20_N : out std_logic; -- CLK
     FMC1_HPC_LA21_P : in std_logic;  -- OUT
     FMC1_HPC_LA21_N : out std_logic; -- IN
+
+    -- Toggle switches
+    FMC1_HPC_LA13_P : in std_logic; -- Echo
+    FMC1_HPC_LA14_N : in std_logic; -- MIDI/USB
+    FMC1_HPC_LA15_P : in std_logic; -- LFO 1
+    FMC1_HPC_LA15_N : in std_logic; -- LFO 2
+    FMC1_HPC_LA16_P : in std_logic; -- Oscillator 2
+    FMC1_HPC_LA16_N : in std_logic; -- Filter
 
     ---- Encoders
     -- LFO1 dutycycle
@@ -117,8 +139,8 @@ architecture Behavioral of synth_top is
   signal ENC_Envelope_attack, ENC_Envelope_release : integer range 0 to 65535 := 32767;
   signal ENC_OSC1_dutycycle, ENC_OSC2_dutycycle : integer range 0 to 100 := 50;
   signal ENC_OSC1_wavetype, ENC_OSC2_wavetype : std_logic_vector(2 downto 0);
+  signal ENC_Filter_cutoff : natural range 0 to 16383 := 4000;
   signal Filter_type : FILTER := LP;
-  signal Filter_cutoff : integer range 0 to 20000 := 4000;
 
   -- Encoder states
   signal LFO1_ES, LFO2_ES, OSC2_ES, Filter_ES, Echo_ES : std_logic := '0';
@@ -126,6 +148,7 @@ architecture Behavioral of synth_top is
   -- Test LED vector
   signal OSC1_leds, OSC2_leds : std_logic_vector(4 downto 0) := (others => '0');
   signal Filter_leds : std_logic_vector(2 downto 0) := (others => '0');
+  signal leds : std_logic_vector(3 downto 0);
 
   --  Encoder signals
   type encoderArray is array (0 to 10) of std_logic_vector(2 downto 0);
@@ -141,17 +164,17 @@ architecture Behavioral of synth_top is
   signal value_type : integer range 0 to 15 := 0;
 
   -- Oscillator 1 signals
-  signal OSC1note   : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(36,8));
+  signal OSC1note   : std_logic_vector (7 downto 0) := (others => '0');
   signal OSC1semi   : std_logic_vector (4 downto 0) := (others => '0');
   signal OSC1output : std_logic_vector (11 downto 0) := (others => '0');
-  signal OSC1dutycycle  : std_logic_vector (6 downto 0) := (others => '0');
+  signal OSC1dutycycle  : std_logic_vector (6 downto 0) := "0110010";
   signal OSC1wavetype : WAVE := SINE;
 
   -- Oscillator 2 signals
-  signal OSC2note   : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(36,8));
+  signal OSC2note   : std_logic_vector (7 downto 0) := (others => '0');
   signal OSC2semi   : std_logic_vector (4 downto 0) := (others => '0');
   signal OSC2output : std_logic_vector (11 downto 0) := (others => '0');
-  signal OSC2dutycycle  : std_logic_vector (6 downto 0) := (others => '0');
+  signal OSC2dutycycle  : std_logic_vector (6 downto 0) := "0110010";
   signal OSC2wavetype : WAVE := SINE;
 
   -- ASR Envelope signals
@@ -161,9 +184,9 @@ architecture Behavioral of synth_top is
 
   -- IIR signals
   signal Filter_Q  : sfixed(16 downto -12);
+  signal Filter_cutoff : integer range 0 to 16383 := 4000;
   signal filterOut : std_logic_vector(11 downto 0) := (others => '0');
   signal filterIn  : std_logic_vector(11 downto 0) := (others => '0');
-  signal EN_Filter : std_logic := '1';
 
   -- I2S Transmitter signals
   signal I2S_data : std_logic_vector(11 downto 0);
@@ -187,22 +210,48 @@ architecture Behavioral of synth_top is
   signal DACstart : std_logic;
   signal DACready : std_logic;
 
-  -- -- MIDI signals
-  -- TYPE States IS (Idle, Recieved);
-  -- SIGNAL MIDI_note_state 	: States;
-  -- signal Clock_Enable : std_logic;
-  -- signal Uart_send    : std_logic;
-  -- signal Uart_Dec     : std_logic_vector(7 downto 0);
-  -- signal Note_data    : std_logic_vector(15 downto 0);
-  -- signal Note_ready   : std_logic;
-  -- signal Note_state   : std_logic;
-  -- signal uartLED      : std_logic;
-  -- signal Note_out     : std_logic_vector(7 downto 0);
-  -- signal Note_rec     : std_logic_vector(7 downto 0);
+   -- MIDI signals
+   TYPE States IS (Idle, Recieved);
+   SIGNAL MIDI_note_state 	: States;
+   signal Clock_Enable : std_logic;
+   signal Uart_send    : std_logic;
+   signal Uart_Dec     : std_logic_vector(7 downto 0);
+   signal Note_data    : std_logic_vector(15 downto 0);
+   signal Note_ready   : std_logic;
+   signal Note_state   : std_logic;
+   signal uartLED      : std_logic;
+   signal Note_out     : std_logic_vector(7 downto 0);
+   signal Note_rec     : std_logic_vector(7 downto 0);
+   signal MIDI_ASR_noteState   : std_logic := '0';
+
+   -- Toggle switch signals
+   signal EN_Echo      : std_logic;
+   signal EN_MIDI_USB  : std_logic;
+   signal EN_LFO1      : std_logic;
+   signal EN_LFO2      : std_logic;
+   signal EN_OSC2      : std_logic;
+   signal EN_Filter    : std_logic;
 
 begin
   -- Reset signal
   reset <= not GPIO_SW_N;
+
+  -- Toggle switches
+  EN_Echo      <= FMC1_HPC_LA13_P;
+  EN_MIDI_USB  <= FMC1_HPC_LA14_N;
+  EN_LFO1      <= FMC1_HPC_LA15_P;
+  EN_LFO2      <= FMC1_HPC_LA15_N;
+  EN_OSC2      <= FMC1_HPC_LA16_P;
+  EN_Filter    <= FMC1_HPC_LA16_N;
+
+  -- -- Note number leds
+  GPIO_LED_0 <= leds(0);
+  GPIO_LED_1 <= leds(1);
+  GPIO_LED_2 <= leds(2);
+  GPIO_LED_3 <= leds(3);
+  with GPIO_SW_S select
+    leds <= note_out(3 downto 0) when '0',
+            note_out(7 downto 4) when '1';
 
   -- LED
   FMC1_HPC_LA04_N <= OSC1_leds(0); -- Oscillator 1 Sine
@@ -221,27 +270,27 @@ begin
 
   -- Oscillator 1 wavetype LED changer
   with OSC1wavetype select
-    OSC1_leds <=  "00001" when SINE, -- Sine
-                  "00010" when SQUARE, -- Square
-                  "00100" when TRIANGLE, -- Triangle
-                  "01000" when SAW1, -- Saw 1
-                  "10000" when SAW2, -- Saw 2
-                  "11111" when others; -- Other wave
+    OSC1_leds <=  "00001" when SINE,
+                  "00010" when SQUARE,
+                  "00100" when TRIANGLE,
+                  "01000" when SAW1,
+                  "10000" when SAW2,
+                  "11111" when others;
 
   -- Oscillator 2 wavetype LED changer
   with OSC2wavetype select
-    OSC2_leds <=  "00001" when SINE, -- Sine
-                  "00010" when SQUARE, -- Square
-                  "00100" when TRIANGLE, -- Triangle
-                  "01000" when SAW1, -- Saw 1
-                  "10000" when SAW2, -- Saw 2
-                  "11111" when others; -- Other wave
+    OSC2_leds <=  "00001" when SINE,
+                  "00010" when SQUARE,
+                  "00100" when TRIANGLE,
+                  "01000" when SAW1,
+                  "10000" when SAW2,
+                  "11111" when others;
 
   -- Filter type LED changer
   with Filter_type select
-    Filter_leds <=  "001" when LP, -- LP
-                    "010" when BP, -- BP
-                    "100" when HP; -- HP
+    Filter_leds <=  "001" when LP,
+                    "010" when BP,
+                    "100" when HP;
 
 -- Clock scaler for IIR filter
 prescale_comp: entity work.prescaler
@@ -253,39 +302,43 @@ prescale_comp_ASR: entity work.prescaler
   generic map ( prescale => 2 )
   port map ( clk, preClkASR );
 
--- -- UART clock sclaer
--- ClockEn_comp: entity work.ClockEnable
--- 	generic map(DesiredFreq => 312500, ClockFreq => 200_000_000)
--- 	port map(clk, reset, Clock_Enable);
+ -- UART clock sclaer
+ ClockEn_comp: entity work.ClockEnable
+ 	generic map(DesiredFreq => 312500, ClockFreq => 200_000_000)
+ 	port map(clk, reset, Clock_Enable);
+  test_out <= Clock_Enable;
 
 -- Clock scaler for ADC
 ADC_enable_comp: entity work.prescaler
   generic map ( prescale => 8 )
   port map ( clk, preClkADC );
 
--- -- UART midi reciever
--- Uart_comp: entity work.Uart
--- 	port map( FMC1_HPC_LA22_P, reset, Clock_Enable, Uart_send, Uart_Dec );
---
--- -- MIDI decoder
--- MIDI_dec_comp: entity work.MIDI_Decoder
--- 	port map( Uart_Dec, Uart_send, reset, Clock_Enable, Note_data, Note_ready, Note_state );
---
--- -- MIDI to oscillator translator
--- MIDI_to_osc_comp: entity work.MIDI_to_Osc
--- 	port map( Note_data, Note_state, Note_ready, reset, Clock_Enable, ASR_noteState, Note_out );
+ -- UART midi reciever
+ Uart_comp: entity work.Uart
+ 	port map( FMC1_HPC_LA22_P, reset, Clock_Enable, Uart_send, Uart_Dec );
+
+ -- MIDI decoder
+ MIDI_dec_comp: entity work.MIDI_Decoder
+ 	port map( Uart_Dec, Uart_send, reset, Clock_Enable, Note_data, Note_ready, Note_state );
+
+ -- MIDI to oscillator translator
+ MIDI_to_osc_comp: entity work.MIDI_to_Osc
+ 	port map( Note_data, Note_state, Note_ready, reset, Clock_Enable, MIDI_ASR_noteState, Note_out );
 
 -- Oscillator 1 component
 Oscillator1_comp: entity work.oscillator
   port map( clk, reset, '1', OSC1wavetype, OSC1note, OSC1semi, OSC1dutycycle, OSC1output );
   OSC1dutycycle <= std_logic_vector(to_unsigned(ENC_OSC1_dutycycle, 7));
+  --OSC1dutycycle <= "0110010";
   OSC1wavetype <= to_wave(ENC_OSC1_wavetype);
+  OSC1note <= Note_out;
 
--- Oscillator 1 component
-Oscillator2_comp: entity work.oscillator
-  port map( clk, reset, '1', OSC2wavetype, OSC2note, OSC2semi, OSC2dutycycle, OSC2output );
-  OSC2dutycycle <= std_logic_vector(to_unsigned(ENC_OSC2_dutycycle, 7));
+-- Oscillator 2 component
+--Oscillator2_comp: entity work.oscillator
+  --port map( clk, reset, '0', OSC2wavetype, OSC2note, OSC2semi, OSC2dutycycle, OSC2output );
+  --OSC2dutycycle <= std_logic_vector(to_unsigned(ENC_OSC2_dutycycle, 7));
   OSC2wavetype <= to_wave(ENC_OSC2_wavetype);
+  --OSC2note <= Note_out;
 
 -- ASR Envelope component
 ASR_comp: entity work.ASR
@@ -293,10 +346,13 @@ ASR_comp: entity work.ASR
   ASR_in <= OSC1output;
   ASR_atk_time <= std_logic_vector(to_signed(ENC_Envelope_attack, 16));
   ASR_rls_time <= std_logic_vector(to_signed(ENC_Envelope_release, 16));
+  ASR_noteState <= MIDI_ASR_noteState;
 
 -- IIR filter component
 IIR_comp: entity work.IIR
+  generic map ( WIDTH => 12, F_WIDTH => 12)
   port map ( preClk40k, clk, reset, Filter_type, Filter_cutoff, Filter_Q, filterIn, filterOut );
+  Filter_cutoff <= 4000;--ENC_Filter_cutoff;
   filterIn <= ASR_out;
   Filter_Q <= to_sfixed(0.7071, Filter_Q);
 
@@ -322,7 +378,7 @@ ADC_comp: entity work.MCP3202_ADC
 
 -- LCD driver component
 LCD_main_comp: entity work.LCD_main
-  generic map ( 200_000_000, 30_000 )
+  generic map ( 200_000_000, 100_000 )
   port map ( clk, reset, '1', value, value_type, "0100111", PMOD_2, PMOD_3 );
 
 -- Encoder components
@@ -356,29 +412,10 @@ IBUFDS_inst: IBUFDS
   I  <= SYSCLK_P;
   IB <= SYSCLK_N;
 
--- -- MIDI controller
--- MIDI_Process:process(clk)
--- begin
--- 	if rising_edge(clk) then
--- 		case MIDI_note_state is
---   		when Idle =>
---   			if ASR_Note_State = '1' then
---   				Note_rec <= Note_out;
---   				MIDI_note_state <= Recieved;
---   			end if;
---   		when Recieved =>
---   			if ASR_Note_State = '0' then
---   				MIDI_note_state <= Idle;
---   			end if;
--- 		end case;
--- 	end if;
--- end process;
-
 -- ADC process
 ADC_process:process(clk)
 begin
   if rising_edge(clk) then
-    --gpioLEDS(7 downto 1) <= ADC_conversion(11 downto 5);
     if preClk40k = '1' then
       ADC_start <= '1';
       ADC_get <= '1';
@@ -625,16 +662,16 @@ begin
   if rising_edge(clk) then
     if encoders(7)(0) = '1' then
       if encoders(7)(1) = '1' then
-        if Filter_cutoff < 20000-multi then
-          Filter_cutoff <= Filter_cutoff + multi;
+        if ENC_Filter_cutoff < (15000-multi) then
+          ENC_Filter_cutoff <= ENC_Filter_cutoff + multi;
         else
-          Filter_cutoff <= 20000;
+          ENC_Filter_cutoff <= 15000;
         end if;
       else
-        if Filter_cutoff > multi then
-          Filter_cutoff <= Filter_cutoff - multi;
+        if ENC_Filter_cutoff > multi then
+          ENC_Filter_cutoff <= ENC_Filter_cutoff - multi;
         else
-          Filter_cutoff <= multi;
+          ENC_Filter_cutoff <= multi;
         end if;
       end if;
     end if;
@@ -782,7 +819,7 @@ begin
       end if;
     elsif encoders(7)(0) = '1' then
       value_type <= 6;
-      value <= std_logic_vector(to_unsigned(Filter_cutoff, 16));
+      value <= std_logic_vector(to_unsigned(ENC_Filter_cutoff, 16));
     elsif encoders(8)(0) = '1' then
       if Echo_ES = '1' then
         value_type <= 7;   -- if echo length

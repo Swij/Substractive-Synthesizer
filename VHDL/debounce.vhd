@@ -19,19 +19,16 @@ begin
 --  Using a register that shifts in a value from a button and always keeps the last bit as the output.
 --  If the incoming bit varies from the last it gets shifted in, and if that value is hold long enough
 --  it will be the last eventually and the output as well.
+    B <= reg(0);
 
 debounce_process: 
 process(clk)
 begin
-
-    B <= reg(0);
-
 	if rising_edge(clk) then
 		if A /= reg(0) 
 		then reg <= A & reg(16-1 downto 1);
 		else reg <= (others => A);
 		end if;
 	end if;
-	
 end process;
 end arch_debounce;

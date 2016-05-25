@@ -29,13 +29,12 @@ architecture arch_encoder of encoder is
     
 begin
 
+bt <= btn;  --  The button output is always the internal register for it.
+
 --  This process change the encoder states and checks the button.
 state_process: 
 process(clk, reset)
-begin
-
-    bt <= btn;  --  The button output is always the internal register for it.
-    
+begin    
     if reset = '0' then
         btn <= '0';
         press <= '0';
