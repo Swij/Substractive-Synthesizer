@@ -61,15 +61,15 @@ BEGIN
 			
 				WHEN "1000" =>									-- Note off message
 					
-					Byte_cnt <= 2;
-					MIDI_Decoder_State <= Recieve;
-					Note_state <= '0';
+					Byte_cnt <= 2;								-- Two data bytes
+					MIDI_Decoder_State <= Recieve;				-- Prepare to recieve data
+					Note_state <= '0';							-- Note should turn off
 	
 				WHEN "1001" =>									-- Note on message
  	
-					Byte_cnt <= 2;
-					Note_state <= '1';
-					MIDI_Decoder_State <= Recieve;
+					Byte_cnt <= 2;								-- Two data bytes
+					Note_state <= '1';							-- Note should turn on
+					MIDI_Decoder_State <= Recieve;				-- Prepare to recieve data
 				
 					
 					
@@ -92,7 +92,7 @@ BEGIN
 			
 		WHEN Recieve =>											--Accumulates MIDI data bytes
 			
-			IF (Data_ready = '1') THEN					
+			IF (Data_ready = '1') & (Data_in(7)='0') THEN		-- Activate on Data_ready, check if byta is data
 				
 				IF (Byte_cnt = 2) THEN							-- Accumulates incoming data byte nr 1, usually note number
 					Data_acc(15 DOWNTO 8) <= Data_in;
@@ -111,11 +111,13 @@ BEGIN
 					MIDI_Decoder_state <= Send;					-- Got to the send state	
 					
 				END IF;
+			ELSE 
+				MIDI_Decoder_State <= Idle;						-- If not data, revert to idle stage
 			END IF;
 				
 		WHEN Send =>											--Sends MIDI Data
 			
-			Data_out <= Data_acc;
+			Data_out <= Data_acc;								
 			Note_state_out <= Note_state;
 			Data_send <= '1';
 			MIDI_Decoder_State <= Idle;							-- Revert to Idle state when data has been sent
