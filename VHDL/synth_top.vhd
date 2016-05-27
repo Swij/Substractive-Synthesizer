@@ -134,15 +134,17 @@ architecture Behavioral of synth_top is
   signal clk, reset, I, IB : std_logic;
 
   -- NOT FIXED ENCODER VALUES
-  signal ENC_LFO2_offset_rate, ENC_LFO2_offset_depth, ENC_OSC2_offset, ENC_Echo_length, ENC_Echo_gain, ENC_Filter_Q : integer range 0 to 100 := 50;
+  signal ENC_LFO2_offset_rate, ENC_LFO2_offset_depth, ENC_OSC2_offset, ENC_Filter_Q : integer range 0 to 100 := 50;
 
   -- Values changed by encoders
   signal multi : integer range 1 to 1000 := 1;
-  signal ENC_LFO1_duty_rate : integer range 0 to 255 := 198; -- std_logic_vector (7 downto 0);
+  signal ENC_Echo_length : integer range 0 to 1999 := 1000;
+  signal ENC_LFO1_duty_rate : integer range 0 to 255 := 198;
   signal ENC_LFO1_duty_depth : integer range 0 to 127 := 50;
   signal ENC_Envelope_attack, ENC_Envelope_release : integer range 0 to 65535 := 32767;
   signal ENC_OSC1_dutycycle, ENC_OSC2_dutycycle : integer range 0 to 100 := 50;
-  signal ENC_OSC1_wavetype, ENC_OSC2_wavetype : std_logic_vector(2 downto 0);
+  signal ENC_OSC1_wavetype, ENC_OSC2_wavetype : std_logic_vector(2 downto 0) := (others => '0');
+  signal ENC_Echo_gain : integer range 0 to 4095 := 1;
   signal ENC_Filter_cutoff : natural range 0 to 16383 := 4000;
   signal Filter_type : FILTER := LP;
 
@@ -189,8 +191,8 @@ architecture Behavioral of synth_top is
   -- IIR signals
   signal Filter_Q  : sfixed(16 downto -12);
   signal Filter_cutoff : integer range 0 to 16383 := 4000;
-  signal filterOut : std_logic_vector(11 downto 0) := (others => '0');
-  signal filterIn  : std_logic_vector(11 downto 0) := (others => '0');
+  signal Filter_out : std_logic_vector(11 downto 0) := (others => '0');
+  signal Filter_in  : std_logic_vector(11 downto 0) := (others => '0');
 
   -- I2S Transmitter signals
   signal I2S_data : std_logic_vector(11 downto 0);
@@ -214,36 +216,40 @@ architecture Behavioral of synth_top is
   signal DACstart : std_logic;
   signal DACready : std_logic;
 
-   -- MIDI signals
-   TYPE States IS (Idle, Recieved);
-   SIGNAL MIDI_note_state 	: States;
-   signal Clock_Enable : std_logic;
-   signal Uart_send    : std_logic;
-   signal Uart_Dec     : std_logic_vector(7 downto 0);
-   signal Note_data    : std_logic_vector(15 downto 0);
-   signal Note_ready   : std_logic;
-   signal Note_state   : std_logic;
-   signal uartLED      : std_logic;
-   signal Note_out     : std_logic_vector(7 downto 0);
-   signal Note_rec     : std_logic_vector(7 downto 0);
-   signal MIDI_ASR_noteState   : std_logic := '0';
+  -- MIDI signals
+  TYPE States IS (Idle, Recieved);
+  SIGNAL MIDI_note_state 	: States;
+  signal Clock_Enable : std_logic;
+  signal Uart_send    : std_logic;
+  signal Uart_Dec     : std_logic_vector(7 downto 0);
+  signal Note_data    : std_logic_vector(15 downto 0);
+  signal Note_ready   : std_logic;
+  signal Note_state   : std_logic;
+  signal uartLED      : std_logic;
+  signal Note_out     : std_logic_vector(7 downto 0);
+  signal Note_rec     : std_logic_vector(7 downto 0);
+  signal MIDI_ASR_noteState   : std_logic := '0';
 
-   -- LFO duty signals
-   signal LFOduty_restart  : std_logic;
-   signal LFOduty_enable   : std_logic;
-   signal LFOduty_rate     : std_logic_vector (7 downto 0);
-   signal LFOduty_depth    : std_logic_vector (6 downto 0);
-   signal LFOduty_waveForm : std_logic;
-   signal LFOduty_output   : std_logic_vector (6 downto 0);
-   signal LFOduty_setting  : std_logic;
+  -- LFO duty signals
+  signal LFOduty_restart  : std_logic;
+  signal LFOduty_enable   : std_logic;
+  signal LFOduty_rate     : std_logic_vector (7 downto 0);
+  signal LFOduty_depth    : std_logic_vector (6 downto 0);
+  signal LFOduty_waveForm : std_logic;
+  signal LFOduty_output   : std_logic_vector (6 downto 0);
+  signal LFOduty_setting  : std_logic;
 
-   -- Toggle switch signals
-   signal EN_Echo      : std_logic;
-   signal EN_MIDI_USB  : std_logic;
-   signal EN_LFO1      : std_logic;
-   signal EN_LFO2      : std_logic;
-   signal EN_OSC2      : std_logic;
-   signal EN_Filter    : std_logic;
+  -- Toggle switch signals
+  signal EN_Echo      : std_logic;
+  signal EN_MIDI_USB  : std_logic;
+  signal EN_LFO1      : std_logic;
+  signal EN_LFO2      : std_logic;
+  signal EN_OSC2      : std_logic;
+  signal EN_Filter    : std_logic;
+
+  -- Echo output signal
+  signal Echo_output : std_logic_vector(11 downto 0);
+  signal Echo_gain : std_logic_vector(11 downto 0) := "000000000001";
 
 begin
   -- Reset signal
@@ -341,7 +347,6 @@ MIDI_to_osc_comp: entity work.MIDI_to_Osc
 Oscillator1_comp: entity work.oscillator
   port map( clk, reset, '1', OSC1wavetype, OSC1note, OSC1semi, OSC1dutycycle, OSC1output );
   OSC1dutycycle <= std_logic_vector(to_unsigned(ENC_OSC1_dutycycle, 7));
-  --OSC1dutycycle <= "0110010";
   OSC1wavetype <= to_wave(ENC_OSC1_wavetype);
   OSC1note <= Note_out;
 
@@ -363,9 +368,9 @@ ASR_comp: entity work.ASR
 -- IIR filter component
 IIR_comp: entity work.IIR
   generic map ( WIDTH => 12, F_WIDTH => 12)
-  port map ( preClk40k, clk, reset, Filter_type, Filter_cutoff, Filter_Q, filterIn, filterOut );
-  Filter_cutoff <= 4000;--ENC_Filter_cutoff;
-  filterIn <= ASR_out;
+  port map ( preClk40k, clk, reset, Filter_type, Filter_cutoff, Filter_Q, Filter_in, Filter_out );
+  Filter_cutoff <= ENC_Filter_cutoff;
+  Filter_in <= ASR_out;
   Filter_Q <= to_sfixed(0.7071, Filter_Q);
 
 -- I2S Transmitter
@@ -375,13 +380,18 @@ I2S_comp: entity work.I2S_transmitter
   FMC1_HPC_LA22_N <= I2S_sck;
   FMC1_HPC_LA23_P <= I2S_ws;
   FMC1_HPC_LA23_N <= I2S_sd;
-  I2S_data <= filterOut;
+  I2S_data <= Filter_out;
 
 -- LFO 1 duty rate and depth
 LFOduty_comp: entity work.LFO_duty
   port map( clk, reset, LFOduty_restart, LFOduty_enable, LFOduty_rate, LFOduty_depth, LFOduty_waveForm, LFOduty_output );
   LFOduty_rate  <= std_logic_vector(to_unsigned(ENC_LFO1_duty_rate,8));
   LFOduty_depth <= std_logic_vector(to_unsigned(ENC_LFO1_duty_depth,7));
+
+-- Echo module
+Echo_comp: entity work.Delay
+  port map(	clk, reset, Filter_out, ENC_Echo_length, Echo_gain, Echo_output );
+  Echo_gain <= std_logic_vector(to_unsigned(ENC_Echo_gain, 12));
 
 -- DAC component
 DAC_comp: entity work.AD5065_DAC
@@ -453,12 +463,15 @@ begin
   if rising_edge(clk) then
     if preClk40k = '1' then
       DACstart <= '1';
-      if EN_Filter = '1' then
-        DACdata(15 downto 4) <= std_logic_vector(signed(filterOut) + 2048);
+      if EN_Echo = '1' then
+        DACdata(15 downto 4) <= std_logic_vector(signed(Echo_output) + 2048);
+        DACdata(3 downto 0) <= (OTHERS => '0');
+      elsif EN_Filter = '1' then
+        DACdata(15 downto 4) <= std_logic_vector(signed(Filter_out) + 2048);
         DACdata(3 downto 0) <= (OTHERS => '0');
       else
         DACdata(15 downto 4) <= std_logic_vector(signed(ASR_out) + 2048);
-        DACdata(3 downto 0) <= "0000";
+        DACdata(3 downto 0) <= (OTHERS => '0');
       end if;
     else
       DACstart <= '0';
