@@ -22,8 +22,10 @@ entity synth_top is
     SYSCLK_P  : in std_logic;
     SYSCLK_N  : in std_logic;
 
-    -- Test output
-    test_out : out std_logic;
+    -- I2S
+    FMC1_HPC_LA22_N : out std_logic; -- SCK
+    FMC1_HPC_LA23_P : out std_logic; -- WS
+    FMC1_HPC_LA23_N : out std_logic; -- SD
 
     -- VCC
     FMC1_HPC_HA10_P : out std_logic := '1';
@@ -132,10 +134,12 @@ architecture Behavioral of synth_top is
   signal clk, reset, I, IB : std_logic;
 
   -- NOT FIXED ENCODER VALUES
-  signal ENC_LFO1_duty_rate, ENC_LFO1_duty_depth, ENC_LFO2_offset_rate, ENC_LFO2_offset_depth, ENC_OSC2_offset, ENC_Echo_length, ENC_Echo_gain, ENC_Filter_Q : integer range 0 to 100 := 50;
+  signal ENC_LFO2_offset_rate, ENC_LFO2_offset_depth, ENC_OSC2_offset, ENC_Echo_length, ENC_Echo_gain, ENC_Filter_Q : integer range 0 to 100 := 50;
 
   -- Values changed by encoders
   signal multi : integer range 1 to 1000 := 1;
+  signal ENC_LFO1_duty_rate : integer range 0 to 255 := 198; -- std_logic_vector (7 downto 0);
+  signal ENC_LFO1_duty_depth : integer range 0 to 127 := 50;
   signal ENC_Envelope_attack, ENC_Envelope_release : integer range 0 to 65535 := 32767;
   signal ENC_OSC1_dutycycle, ENC_OSC2_dutycycle : integer range 0 to 100 := 50;
   signal ENC_OSC1_wavetype, ENC_OSC2_wavetype : std_logic_vector(2 downto 0);
@@ -224,6 +228,15 @@ architecture Behavioral of synth_top is
    signal Note_rec     : std_logic_vector(7 downto 0);
    signal MIDI_ASR_noteState   : std_logic := '0';
 
+   -- LFO duty signals
+   signal LFOduty_restart  : std_logic;
+   signal LFOduty_enable   : std_logic;
+   signal LFOduty_rate     : std_logic_vector (7 downto 0);
+   signal LFOduty_depth    : std_logic_vector (6 downto 0);
+   signal LFOduty_waveForm : std_logic;
+   signal LFOduty_output   : std_logic_vector (6 downto 0);
+   signal LFOduty_setting  : std_logic;
+
    -- Toggle switch signals
    signal EN_Echo      : std_logic;
    signal EN_MIDI_USB  : std_logic;
@@ -302,27 +315,26 @@ prescale_comp_ASR: entity work.prescaler
   generic map ( prescale => 2 )
   port map ( clk, preClkASR );
 
- -- UART clock sclaer
- ClockEn_comp: entity work.ClockEnable
+-- UART clock sclaer
+ClockEn_comp: entity work.ClockEnable
  	generic map(DesiredFreq => 312500, ClockFreq => 200_000_000)
  	port map(clk, reset, Clock_Enable);
-  test_out <= Clock_Enable;
 
 -- Clock scaler for ADC
 ADC_enable_comp: entity work.prescaler
   generic map ( prescale => 8 )
   port map ( clk, preClkADC );
 
- -- UART midi reciever
- Uart_comp: entity work.Uart
+-- UART midi reciever
+Uart_comp: entity work.Uart
  	port map( FMC1_HPC_LA22_P, reset, Clock_Enable, Uart_send, Uart_Dec );
 
- -- MIDI decoder
- MIDI_dec_comp: entity work.MIDI_Decoder
+-- MIDI decoder
+MIDI_dec_comp: entity work.MIDI_Decoder
  	port map( Uart_Dec, Uart_send, reset, Clock_Enable, Note_data, Note_ready, Note_state );
 
- -- MIDI to oscillator translator
- MIDI_to_osc_comp: entity work.MIDI_to_Osc
+-- MIDI to oscillator translator
+MIDI_to_osc_comp: entity work.MIDI_to_Osc
  	port map( Note_data, Note_state, Note_ready, reset, Clock_Enable, MIDI_ASR_noteState, Note_out );
 
 -- Oscillator 1 component
@@ -334,11 +346,11 @@ Oscillator1_comp: entity work.oscillator
   OSC1note <= Note_out;
 
 -- Oscillator 2 component
---Oscillator2_comp: entity work.oscillator
-  --port map( clk, reset, '0', OSC2wavetype, OSC2note, OSC2semi, OSC2dutycycle, OSC2output );
-  --OSC2dutycycle <= std_logic_vector(to_unsigned(ENC_OSC2_dutycycle, 7));
+Oscillator2_comp: entity work.oscillator
+  port map( clk, reset, '0', OSC2wavetype, OSC2note, OSC2semi, OSC2dutycycle, OSC2output );
+  OSC2dutycycle <= std_logic_vector(to_unsigned(ENC_OSC2_dutycycle, 7));
   OSC2wavetype <= to_wave(ENC_OSC2_wavetype);
-  --OSC2note <= Note_out;
+  OSC2note <= Note_out;
 
 -- ASR Envelope component
 ASR_comp: entity work.ASR
@@ -360,8 +372,16 @@ IIR_comp: entity work.IIR
 I2S_comp: entity work.I2S_transmitter
 	generic map ( WIDTH => 12 )
 	port map( preClk40k, I2S_data, I2S_sck, I2S_ws, I2S_sd );
-  --FMC1_HPC_LA02_P <= I2S_sd;
+  FMC1_HPC_LA22_N <= I2S_sck;
+  FMC1_HPC_LA23_P <= I2S_ws;
+  FMC1_HPC_LA23_N <= I2S_sd;
   I2S_data <= filterOut;
+
+-- LFO 1 duty rate and depth
+LFOduty_comp: entity work.LFO_duty
+  port map( clk, reset, LFOduty_restart, LFOduty_enable, LFOduty_rate, LFOduty_depth, LFOduty_waveForm, LFOduty_output );
+  LFOduty_rate  <= std_logic_vector(to_unsigned(ENC_LFO1_duty_rate,8));
+  LFOduty_depth <= std_logic_vector(to_unsigned(ENC_LFO1_duty_depth,7));
 
 -- DAC component
 DAC_comp: entity work.AD5065_DAC
@@ -459,10 +479,10 @@ begin
             ENC_LFO1_duty_depth <= 100;
           end if;
         else                   -- LFO duty rate
-          if ENC_LFO1_duty_rate < 100-multi then
+          if ENC_LFO1_duty_rate < 255-multi then
             ENC_LFO1_duty_rate <= ENC_LFO1_duty_rate + multi;
           else
-            ENC_LFO1_duty_rate <= 100;
+            ENC_LFO1_duty_rate <= 255;
           end if;
         end if;
       else
