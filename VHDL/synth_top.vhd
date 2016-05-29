@@ -389,9 +389,9 @@ LFOduty_comp: entity work.LFO_duty
   LFOduty_depth <= std_logic_vector(to_unsigned(ENC_LFO1_duty_depth,7));
 
 -- Echo module
-Echo_comp: entity work.Delay
-  port map(	clk, reset, Filter_out, ENC_Echo_length, Echo_gain, Echo_output );
-  Echo_gain <= std_logic_vector(to_unsigned(ENC_Echo_gain, 12));
+-- Echo_comp: entity work.Delay
+--   port map(	clk, reset, Filter_out, ENC_Echo_length, Echo_gain, Echo_output );
+--   Echo_gain <= std_logic_vector(to_unsigned(ENC_Echo_gain, 12));
 
 -- DAC component
 DAC_comp: entity work.AD5065_DAC
@@ -464,8 +464,9 @@ begin
     if preClk40k = '1' then
       DACstart <= '1';
       if EN_Echo = '1' then
-        DACdata(15 downto 4) <= std_logic_vector(signed(Echo_output) + 2048);
-        DACdata(3 downto 0) <= (OTHERS => '0');
+        DACdata <= (others => '0');
+        -- DACdata(15 downto 4) <= std_logic_vector(signed(Echo_output) + 2048);
+        -- DACdata(3 downto 0) <= (OTHERS => '0');
       elsif EN_Filter = '1' then
         DACdata(15 downto 4) <= std_logic_vector(signed(Filter_out) + 2048);
         DACdata(3 downto 0) <= (OTHERS => '0');
